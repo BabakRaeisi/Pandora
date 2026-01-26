@@ -1,13 +1,8 @@
 // SWMChest.cs
-// Document-aligned behavior for Between Errors:
-// - UNOPENED: clickable -> reveals treasure/empty
-// - TREASURE: NOT clickable (no need to re-tap)
-// - EMPTY: clickable (so tapping it again counts a Between Error in GameManager)
-//
-// Attach this to the same GameObject that has:
-// - Image
-// - Button
+// Reveal briefly then close (always).
+// Re-clicking EMPTY or TREASURE also briefly reveals + lets GameManager show warning + add error icon.
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,10 +12,13 @@ public class SWMChest : MonoBehaviour
 
     [Header("Sprites")]
     [SerializeField] private Sprite closedSprite;
-    [SerializeField] private Sprite treasureSprite;
-    [SerializeField] private Sprite emptySprite;
+    [SerializeField] private Sprite treasureOpenSprite; // open chest with gold
+    [SerializeField] private Sprite emptyOpenSprite;    // open empty chest
 
-    [Header("Optional")]
+    [Header("Reveal Timing")]
+    [SerializeField, Range(0.1f, 2f)] private float revealSeconds = 0.6f;
+
+    [Header("UI Safety")]
     [SerializeField] private bool preserveAspect = true;
 
     public int Index { get; private set; }
@@ -31,31 +29,26 @@ public class SWMChest : MonoBehaviour
     private Button btn;
     private SWMGameManager manager;
 
+    private Coroutine routine;
+    private bool isRevealing;
+
     void Awake()
     {
         img = GetComponent<Image>();
         btn = GetComponent<Button>();
-
-        if (img == null)
-            Debug.LogError($"{name}: Missing Image component.");
-
-        if (btn == null)
-            Debug.LogError($"{name}: Missing Button component.");
 
         if (btn != null)
         {
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(OnClick);
 
-            // Avoid tint/transition issues
+            // prevent tinting / transitions
             btn.transition = Selectable.Transition.None;
-
-            if (img != null)
-                btn.targetGraphic = img;
+            if (img != null) btn.targetGraphic = img;
         }
 
         ApplyUISafeDefaults();
-        UpdateVisual();
+        ForceClosedVisual();
         UpdateInteractivity();
     }
 
@@ -70,72 +63,91 @@ public class SWMChest : MonoBehaviour
         HasTreasure = hasTreasure;
         State = ChestState.Unopened;
 
+        if (routine != null) StopCoroutine(routine);
+        routine = null;
+        isRevealing = false;
+
         ApplyUISafeDefaults();
-        UpdateVisual();
+        ForceClosedVisual();
         UpdateInteractivity();
     }
 
-    public void Reveal()
+    void OnClick()
+    {
+        if (isRevealing) return;
+        manager?.OnChestPressed(this);
+    }
+
+    /// <summary>
+    /// First-time open: locks state + reveals briefly then closes.
+    /// Call only when State == Unopened.
+    /// </summary>
+    public void RevealFirstTime()
     {
         if (State != ChestState.Unopened) return;
 
         State = HasTreasure ? ChestState.Treasure : ChestState.Empty;
+        StartRevealRoutine(State);
+    }
+
+    /// <summary>
+    /// Re-open briefly without changing state (EMPTY or TREASURE re-click).
+    /// </summary>
+    public void RevealAgain()
+    {
+        if (State == ChestState.Unopened) return;
+        StartRevealRoutine(State);
+    }
+
+    void StartRevealRoutine(ChestState revealState)
+    {
+        if (routine != null) StopCoroutine(routine);
+        routine = StartCoroutine(RevealThenCloseRoutine(revealState));
+    }
+
+    IEnumerator RevealThenCloseRoutine(ChestState revealState)
+    {
+        isRevealing = true;
+        UpdateInteractivity(); // blocks spamming via isRevealing anyway
 
         ApplyUISafeDefaults();
-        UpdateVisual();
+
+        if (img != null)
+        {
+            img.sprite = (revealState == ChestState.Treasure) ? treasureOpenSprite : emptyOpenSprite;
+            img.color = Color.white;
+        }
+
+        yield return new WaitForSeconds(Mathf.Max(0.1f, revealSeconds));
+
+        ForceClosedVisual();
+
+        isRevealing = false;
         UpdateInteractivity();
+        routine = null;
     }
 
-    // Optional feedback hook you can expand later (shake/glow)
-    public void FlashEmptyFeedback()
+    void ForceClosedVisual()
     {
-        // intentionally empty
+        ApplyUISafeDefaults();
+        if (img != null)
+        {
+            img.sprite = closedSprite;
+            img.color = Color.white;
+        }
     }
 
-    private void OnClick()
-    {
-        if (manager == null) return;
-        manager.OnChestPressed(this);
-    }
-
-    private void UpdateInteractivity()
+    void UpdateInteractivity()
     {
         if (btn == null) return;
 
-        // Key rule:
-        // - Keep EMPTY clickable so GameManager can count Between Errors.
-        // - Disable TREASURE to reduce pointless taps.
-        // - UNOPENED must be clickable.
-        btn.interactable = (State == ChestState.Unopened) || (State == ChestState.Empty);
+        // You want BOTH EMPTY and TREASURE to be clickable so re-click shows warning + adds error.
+        btn.interactable = true;
     }
 
-    private void UpdateVisual()
+    void ApplyUISafeDefaults()
     {
         if (img == null) return;
-
-        ApplyUISafeDefaults();
-
-        Sprite s = State switch
-        {
-            ChestState.Unopened => closedSprite,
-            ChestState.Treasure => treasureSprite,
-            ChestState.Empty => emptySprite,
-            _ => closedSprite
-        };
-
-        if (s == null)
-        {
-            Debug.LogError($"{name}: Missing sprite for state {State}. Assign sprites in inspector.");
-            return;
-        }
-
-        img.sprite = s;
-    }
-
-    private void ApplyUISafeDefaults()
-    {
-        if (img == null) return;
-
         img.material = null;
         img.color = Color.white;
         img.type = Image.Type.Simple;

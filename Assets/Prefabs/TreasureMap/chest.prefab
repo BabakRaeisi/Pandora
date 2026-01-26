@@ -134,5 +134,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SWMChest
   closedSprite: {fileID: -195977580518945154, guid: a9640ce87df422349bc06f5a775a83f0, type: 3}
-  treasureSprite: {fileID: -229731804756415042, guid: 8487f5a0e3d6ac241b2184e23fa7e33d, type: 3}
-  emptySprite: {fileID: 2103335113271756359, guid: 846f33c4dad15f34388bca01409b7c54, type: 3}
+  treasureOpenSprite: {fileID: -229731804756415042, guid: 8487f5a0e3d6ac241b2184e23fa7e33d, type: 3}
+  emptyOpenSprite: {fileID: 2103335113271756359, guid: 846f33c4dad15f34388bca01409b7c54, type: 3}
+  revealSeconds: 0.6
+  preserveAspect: 1

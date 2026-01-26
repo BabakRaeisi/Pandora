@@ -518,37 +518,8 @@ MonoBehaviour:
   spawner: {fileID: 578731124}
   hud: {fileID: 389995457}
   recorder: {fileID: 578731125}
-  mainMenuSceneName: 0
+  config: {fileID: 11400000, guid: d895313c101e6044f98a5972f42d58b5, type: 2}
   day: 1
-  dayConfigs:
-  - day: 1
-    boxes: 3
-    treasures: 2
-    trials: 5
-  - day: 2
-    boxes: 4
-    treasures: 2
-    trials: 5
-  - day: 3
-    boxes: 4
-    treasures: 3
-    trials: 6
-  - day: 4
-    boxes: 6
-    treasures: 3
-    trials: 6
-  - day: 5
-    boxes: 6
-    treasures: 4
-    trials: 7
-  - day: 6
-    boxes: 6
-    treasures: 4
-    trials: 7
-  - day: 7
-    boxes: 8
-    treasures: 4
-    trials: 8
 --- !u!114 &578731124
 MonoBehaviour:
   m_ObjectHideFlags: 0
