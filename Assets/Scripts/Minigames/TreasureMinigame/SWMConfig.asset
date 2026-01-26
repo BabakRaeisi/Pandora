@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d528d1d4d9e5ef742a9856483be7addb, type: 3}
+  m_Name: SWMConfig
+  m_EditorClassIdentifier: Assembly-CSharp::SWMConfig
+  days:
+  - day: 1
+    boxes: 3
+    treasures: 2
+    trials: 5
+  - day: 2
+    boxes: 4
+    treasures: 2
+    trials: 5
+  - day: 3
+    boxes: 4
+    treasures: 3
+    trials: 6
+  - day: 4
+    boxes: 6
+    treasures: 3
+    trials: 6
+  - day: 5
+    boxes: 6
+    treasures: 4
+    trials: 7
+  - day: 6
+    boxes: 6
+    treasures: 4
+    trials: 7
+  - day: 7
+    boxes: 8
+    treasures: 4
+    trials: 8
