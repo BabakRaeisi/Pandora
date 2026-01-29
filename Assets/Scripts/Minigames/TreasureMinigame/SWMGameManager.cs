@@ -1,26 +1,22 @@
 // SWMGameManager.cs
-// COMPLETE version (Day -> multiple Trials -> footer trial stars -> return to main map)
-// Works with:
-// - SWMChest.cs (the version that: RevealFirstTime(), RevealAgain(), closes after brief reveal)
-// - SWMHUD.cs (the version that has: SetupDay(), SetupTrial(), SetTrialsProgress(), ShowTrialComplete(), ShowDayComplete(), AddBetweenError())
-// - SWMSessionRecorder.cs (optional, saves day JSON)
-// - SWMConfig.cs ScriptableObject (day table)
+// Updated to match the NEW thin SWMHUD (widgets-based):
+// SWMHUD methods used now:
+// - SetupDay(int totalTrials)
+// - SetupTrial(int goalCollected)
+// - SetTrialsDone(int done)
+// - SetCollectedFound(int found)
+// - AddErrorAndWarn()
+// - ShowTrialComplete()
+// - ShowDayComplete()
 //
-// Behavior you requested:
-// - Chests open briefly then close (even treasure)
-// - Re-clicking an already-opened chest (EMPTY or TREASURE):
-//      -> chest briefly opens again
-//      -> warning panel/icon shows (through HUD)
-//      -> error icon added
-//      -> adds error count (EMPTY => BetweenErrors, TREASURE => WithinErrors)
-// - Footer stars show trial progress (gray remaining, gold done)
-// - After last trial of the day:
-//      -> Next Trial button is replaced by Return-to-Map button (HUD.ShowDayComplete())
-//      -> day JSON saved (if recorder assigned)
+// Works with:
+// - SWMChest.cs (RevealFirstTime(), RevealAgain())
+// - SWMConfig.cs
+// - SWMSessionRecorder.cs (optional)
+// NO SceneManager stuff here; your SceneFlow handles return-to-menu button.
 
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class SWMGameManager : MonoBehaviour
 {
@@ -32,7 +28,6 @@ public class SWMGameManager : MonoBehaviour
 
     [Header("Protocol Day (1..7)")]
     [SerializeField, Range(1, 7)] private int day = 1;
- 
 
     // --- current day config ---
     private SWMConfig.DayConfig dayCfg;
@@ -40,7 +35,7 @@ public class SWMGameManager : MonoBehaviour
 
     // --- current trial settings ---
     private int numBoxes;
-    private int goalTreasures;
+    private int goalCollected; // SWM: treasures required
 
     // --- runtime ---
     private readonly List<SWMChest> chests = new();
@@ -51,7 +46,7 @@ public class SWMGameManager : MonoBehaviour
     private bool trialComplete;
 
     // --- metrics (current trial) ---
-    private int treasuresFound;
+    private int collectedFound;   // SWM: treasuresFound
     private int betweenErrors;
     private int withinErrors;
     private int totalSelections;
@@ -64,15 +59,14 @@ public class SWMGameManager : MonoBehaviour
         StartDay(day);
     }
 
-    // Called at scene start or from menu
     public void StartDay(int dayNumber)
     {
-        if (config == null)
+        if (!config)
         {
             Debug.LogError("SWMGameManager: SWMConfig is not assigned.");
             return;
         }
-        if (spawner == null)
+        if (!spawner)
         {
             Debug.LogError("SWMGameManager: ChestSpawnerRandom is not assigned.");
             return;
@@ -84,7 +78,7 @@ public class SWMGameManager : MonoBehaviour
         trialIndex = 0;
 
         hud?.SetupDay(dayCfg.trials);
-        hud?.SetTrialsProgress(0);
+        hud?.SetTrialsDone(0);
 
         StartNextTrial();
     }
@@ -92,7 +86,7 @@ public class SWMGameManager : MonoBehaviour
     // Button: Next Trial
     public void StartNextTrial()
     {
-        // If day finished: save + show "Return to Map" button
+        // Day finished: save + show return-to-menu button (HUD side)
         if (trialIndex >= dayCfg.trials)
         {
             recorder?.SaveDay(day);
@@ -104,24 +98,24 @@ public class SWMGameManager : MonoBehaviour
         firstClickTime = -1f;
 
         numBoxes = Mathf.Clamp(dayCfg.boxes, 3, 12);
-        goalTreasures = Mathf.Clamp(dayCfg.treasures, 1, numBoxes);
+        goalCollected = Mathf.Clamp(dayCfg.treasures, 1, numBoxes);
 
         // Reset trial metrics
-        treasuresFound = 0;
+        collectedFound = 0;
         betweenErrors = 0;
         withinErrors = 0;
         totalSelections = 0;
 
-        // HUD
-        hud?.SetupTrial(goalTreasures);
-        hud?.SetTreasuresFound(0);
+        // HUD (generic collected bar)
+        hud?.SetupTrial(goalCollected);
+        hud?.SetCollectedFound(0);
 
         // Spawn chests
         chests.Clear();
         chests.AddRange(spawner.Spawn(numBoxes, this));
 
         // Pick treasure placements
-        treasureIndices = PickUniqueIndices(numBoxes, goalTreasures);
+        treasureIndices = PickUniqueIndices(numBoxes, goalCollected);
 
         // Assign chest state
         for (int i = 0; i < chests.Count; i++)
@@ -131,10 +125,7 @@ public class SWMGameManager : MonoBehaviour
             chests[i].ResetForTrial(hasTreasure);
         }
 
-        // Start trial time
         trialStartTime = Time.time;
-
-        // Create trial data skeleton (for logging)
         currentData = NewTrialDataSkeleton();
     }
 
@@ -145,24 +136,21 @@ public class SWMGameManager : MonoBehaviour
         if (firstClickTime < 0f) firstClickTime = Time.time;
 
         totalSelections++;
-
         int tMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
 
-        // UNOPENED: reveal first time
+        // UNOPENED
         if (chest.State == SWMChest.ChestState.Unopened)
         {
             chest.RevealFirstTime();
 
             if (chest.HasTreasure)
             {
-                treasuresFound++;
-                hud?.SetTreasuresFound(treasuresFound);
+                collectedFound++;
+                hud?.SetCollectedFound(collectedFound);
                 RecordSelection(chest.Index, "treasure", tMs);
 
-                if (treasuresFound >= goalTreasures)
-                {
+                if (collectedFound >= goalCollected)
                     CompleteTrial();
-                }
             }
             else
             {
@@ -174,9 +162,9 @@ public class SWMGameManager : MonoBehaviour
 
         // ALREADY OPENED (EMPTY or TREASURE):
         // - brief open again
-        // - show warning + add error icon
+        // - warning panel + error icon
         chest.RevealAgain();
-        hud?.AddBetweenError(); // this also shows your warning panel/icon
+        hud?.AddErrorAndWarn();
 
         if (chest.State == SWMChest.ChestState.Empty)
         {
@@ -197,7 +185,6 @@ public class SWMGameManager : MonoBehaviour
         int completionMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
         int firstClickLatencyMs = (firstClickTime < 0f) ? 0 : Mathf.RoundToInt((firstClickTime - trialStartTime) * 1000f);
 
-        // finalize trial data
         if (currentData == null) currentData = NewTrialDataSkeleton();
 
         currentData.between_errors = betweenErrors;
@@ -209,17 +196,15 @@ public class SWMGameManager : MonoBehaviour
         recorder?.AddTrial(currentData);
         currentData = null;
 
-        // Update footer stars: (trialIndex is 0-based, so done = trialIndex+1)
-        hud?.SetTrialsProgress(trialIndex + 1);
-
-        // Show completion indicator + Next Trial button
-        hud?.ShowTrialComplete();
-
-        // Advance to next trial index (next click on Next Trial starts it)
+        //  MOVE THIS UP
         trialIndex++;
-    }
 
- 
+        // NOW update footer stars
+        hud?.SetTrialsDone(trialIndex);
+
+        // Completion + Next Trial button
+        hud?.ShowTrialComplete();
+    }
     // ----------------- Data helpers -----------------
 
     private SWMTrialData NewTrialDataSkeleton()
@@ -230,10 +215,9 @@ public class SWMGameManager : MonoBehaviour
             day = day,
             trial_index = trialIndex + 1,
             boxes = numBoxes,
-            treasures = goalTreasures,
+            treasures = goalCollected,
         };
 
-        // record positions (RectTransform anchored positions)
         for (int i = 0; i < chests.Count; i++)
         {
             if (!chests[i]) continue;

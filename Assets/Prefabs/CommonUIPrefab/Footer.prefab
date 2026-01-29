@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5384274484522129170}
   - component: {fileID: 2227626289377133362}
   - component: {fileID: 5393494700842981396}
+  - component: {fileID: 3432639434892582641}
   m_Layer: 5
   m_Name: TrialsCount
   m_TagString: Untagged
@@ -102,6 +103,23 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
+--- !u!114 &3432639434892582641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277725140357588622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c148b4d1768c314495e82c53505dd0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IconProgressBar
+  container: {fileID: 9090221370341104120}
+  iconPrefab: {fileID: 8846922297374243993, guid: e6f13c981b512a641a8f466bb5ee3bb4, type: 3}
+  emptySprite: {fileID: -3673437966201261359, guid: 1eaee135ce037439d925cee5e41ce026, type: 3}
+  filledSprite: {fileID: 2020845106392875415, guid: 1eaee135ce037439d925cee5e41ce026, type: 3}
+  fallbackSize: {x: 40, y: 40}
 --- !u!1 &1222141383485322466
 GameObject:
   m_ObjectHideFlags: 0
