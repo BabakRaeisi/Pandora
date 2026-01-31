@@ -1,20 +1,3 @@
-// SWMGameManager.cs
-// Updated to match the NEW thin SWMHUD (widgets-based):
-// SWMHUD methods used now:
-// - SetupDay(int totalTrials)
-// - SetupTrial(int goalCollected)
-// - SetTrialsDone(int done)
-// - SetCollectedFound(int found)
-// - AddErrorAndWarn()
-// - ShowTrialComplete()
-// - ShowDayComplete()
-//
-// Works with:
-// - SWMChest.cs (RevealFirstTime(), RevealAgain())
-// - SWMConfig.cs
-// - SWMSessionRecorder.cs (optional)
-// NO SceneManager stuff here; your SceneFlow handles return-to-menu button.
-
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,55 +6,43 @@ public class SWMGameManager : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private ChestSpawnerRandom spawner;
     [SerializeField] private SWMHUD hud;
-    [SerializeField] private SWMSessionRecorder recorder;
     [SerializeField] private SWMConfig config;
+    [SerializeField] private SWMSessionRecorder recorder;
 
     [Header("Protocol Day (1..7)")]
     [SerializeField, Range(1, 7)] private int day = 1;
 
-    // --- current day config ---
     private SWMConfig.DayConfig dayCfg;
-    private int trialIndex; // 0-based (0..trials-1)
+    private int trialIndex;
 
-    // --- current trial settings ---
+    // Pool
+    private List<SWMChest> pool = new();
+    private int poolSize;
+
+    // Stable IDs for chests (since SetIndex/Index is not guaranteed)
+    private readonly Dictionary<SWMChest, int> chestId = new();
+
+    // Trial params
     private int numBoxes;
-    private int goalCollected; // SWM: treasures required
-
-    // --- runtime ---
-    private readonly List<SWMChest> chests = new();
+    private int goalCollected;
     private HashSet<int> treasureIndices = new();
 
+    // Trial runtime
     private float trialStartTime;
     private float firstClickTime = -1f;
     private bool trialComplete;
 
-    // --- metrics (current trial) ---
-    private int collectedFound;   // SWM: treasuresFound
+    private int collectedFound;
     private int betweenErrors;
     private int withinErrors;
     private int totalSelections;
 
-    // --- data (current trial) ---
     private SWMTrialData currentData;
 
-    void Start()
-    {
-        StartDay(day);
-    }
+    void Start() => StartDay(day);
 
     public void StartDay(int dayNumber)
     {
-        if (!config)
-        {
-            Debug.LogError("SWMGameManager: SWMConfig is not assigned.");
-            return;
-        }
-        if (!spawner)
-        {
-            Debug.LogError("SWMGameManager: ChestSpawnerRandom is not assigned.");
-            return;
-        }
-
         day = Mathf.Clamp(dayNumber, 1, 7);
         dayCfg = config.GetDay(day);
 
@@ -80,13 +51,26 @@ public class SWMGameManager : MonoBehaviour
         hud?.SetupDay(dayCfg.trials);
         hud?.SetTrialsDone(0);
 
+        // Spawn ONCE for the day (max boxes for that day)
+        poolSize = Mathf.Clamp(dayCfg.boxes, 3, 12);
+
+        // Destroy previous pool (if restarting day)
+        for (int i = 0; i < pool.Count; i++)
+            if (pool[i]) Destroy(pool[i].gameObject);
+        pool.Clear();
+        chestId.Clear();
+
+        pool = spawner.SpawnPool(poolSize,this);
+
+        // Assign stable ids 0..poolSize-1 (NO SetIndex)
+        for (int i = 0; i < pool.Count; i++)
+            if (pool[i]) chestId[pool[i]] = i;
+
         StartNextTrial();
     }
 
-    // Button: Next Trial
     public void StartNextTrial()
     {
-        // Day finished: save + show return-to-menu button (HUD side)
         if (trialIndex >= dayCfg.trials)
         {
             recorder?.SaveDay(day);
@@ -97,32 +81,29 @@ public class SWMGameManager : MonoBehaviour
         trialComplete = false;
         firstClickTime = -1f;
 
-        numBoxes = Mathf.Clamp(dayCfg.boxes, 3, 12);
+        numBoxes = Mathf.Clamp(dayCfg.boxes, 3, poolSize);
         goalCollected = Mathf.Clamp(dayCfg.treasures, 1, numBoxes);
 
-        // Reset trial metrics
         collectedFound = 0;
         betweenErrors = 0;
         withinErrors = 0;
         totalSelections = 0;
 
-        // HUD (generic collected bar)
         hud?.SetupTrial(goalCollected);
         hud?.SetCollectedFound(0);
 
-        // Spawn chests
-        chests.Clear();
-        chests.AddRange(spawner.Spawn(numBoxes, this));
+        // Reposition the SAME chests each trial (and activate only first numBoxes)
+        spawner.Reposition(pool, numBoxes);
 
-        // Pick treasure placements
+        // Pick treasure indices among ACTIVE boxes only (0..numBoxes-1)
         treasureIndices = PickUniqueIndices(numBoxes, goalCollected);
 
-        // Assign chest state
-        for (int i = 0; i < chests.Count; i++)
+        // Reset only active chests (0..numBoxes-1)
+        for (int i = 0; i < numBoxes; i++)
         {
-            if (!chests[i]) continue;
-            bool hasTreasure = treasureIndices.Contains(chests[i].Index);
-            chests[i].ResetForTrial(hasTreasure);
+            if (!pool[i]) continue;
+            bool hasTreasure = treasureIndices.Contains(i);
+            pool[i].ResetForTrial(hasTreasure);
         }
 
         trialStartTime = Time.time;
@@ -132,13 +113,15 @@ public class SWMGameManager : MonoBehaviour
     public void OnChestPressed(SWMChest chest)
     {
         if (trialComplete || chest == null) return;
+        if (!chest.gameObject.activeInHierarchy) return;
 
         if (firstClickTime < 0f) firstClickTime = Time.time;
 
         totalSelections++;
         int tMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
 
-        // UNOPENED
+        int id = GetChestId(chest);
+
         if (chest.State == SWMChest.ChestState.Unopened)
         {
             chest.RevealFirstTime();
@@ -147,35 +130,39 @@ public class SWMGameManager : MonoBehaviour
             {
                 collectedFound++;
                 hud?.SetCollectedFound(collectedFound);
-                RecordSelection(chest.Index, "treasure", tMs);
+                RecordSelection(id, "treasure", tMs);
 
                 if (collectedFound >= goalCollected)
                     CompleteTrial();
             }
             else
             {
-                RecordSelection(chest.Index, "empty", tMs);
+                RecordSelection(id, "empty", tMs);
             }
 
             return;
         }
 
-        // ALREADY OPENED (EMPTY or TREASURE):
-        // - brief open again
-        // - warning panel + error icon
         chest.RevealAgain();
         hud?.AddErrorAndWarn();
 
         if (chest.State == SWMChest.ChestState.Empty)
         {
             betweenErrors++;
-            RecordSelection(chest.Index, "between_error", tMs);
+            RecordSelection(id, "between_error", tMs);
         }
         else if (chest.State == SWMChest.ChestState.Treasure)
         {
             withinErrors++;
-            RecordSelection(chest.Index, "within_error", tMs);
+            RecordSelection(id, "within_error", tMs);
         }
+    }
+
+    private int GetChestId(SWMChest chest)
+    {
+        // If it somehow wasn't mapped, fall back to list index
+        if (chestId.TryGetValue(chest, out int id)) return id;
+        return pool.IndexOf(chest);
     }
 
     private void CompleteTrial()
@@ -196,16 +183,10 @@ public class SWMGameManager : MonoBehaviour
         recorder?.AddTrial(currentData);
         currentData = null;
 
-        //  MOVE THIS UP
         trialIndex++;
-
-        // NOW update footer stars
         hud?.SetTrialsDone(trialIndex);
-
-        // Completion + Next Trial button
         hud?.ShowTrialComplete();
     }
-    // ----------------- Data helpers -----------------
 
     private SWMTrialData NewTrialDataSkeleton()
     {
@@ -218,15 +199,16 @@ public class SWMGameManager : MonoBehaviour
             treasures = goalCollected,
         };
 
-        for (int i = 0; i < chests.Count; i++)
+        // record positions of active boxes only
+        for (int i = 0; i < numBoxes; i++)
         {
-            if (!chests[i]) continue;
-            var rt = chests[i].GetComponent<RectTransform>();
+            if (!pool[i]) continue;
+            var rt = pool[i].GetComponent<RectTransform>();
             if (!rt) continue;
 
             data.box_positions.Add(new SWMBoxPos
             {
-                box_id = chests[i].Index,
+                box_id = i, // stable id within this pool
                 x = rt.anchoredPosition.x,
                 y = rt.anchoredPosition.y
             });
@@ -246,8 +228,6 @@ public class SWMGameManager : MonoBehaviour
             timestamp_ms = tMs
         });
     }
-
-    // ----------------- Random selection helper -----------------
 
     private static HashSet<int> PickUniqueIndices(int n, int k)
     {

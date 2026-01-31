@@ -27,7 +27,7 @@ public class SWMChest : MonoBehaviour
 
     private Image img;
     private Button btn;
-    private SWMGameManager manager;
+   [SerializeField] private SWMGameManager manager;
 
     private Coroutine routine;
     private bool isRevealing;
