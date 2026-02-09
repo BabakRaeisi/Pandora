@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63a6d467877f78541960b22003899825, type: 3}
+  m_Name: ConstellationConfig
+  m_EditorClassIdentifier: Assembly-CSharp::ConstellationConfigSO
+  days:
+  - dayNumber: 1
+    trials: 7
+    span: 3
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 2
+    trials: 7
+    span: 3
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 3
+    trials: 7
+    span: 4
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 4
+    trials: 7
+    span: 5
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 5
+    trials: 7
+    span: 6
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 6
+    trials: 7
+    span: 7
+    starOnSeconds: 1
+    gapSeconds: 0.25
+  - dayNumber: 7
+    trials: 7
+    span: 8
+    starOnSeconds: 1
+    gapSeconds: 0.25
