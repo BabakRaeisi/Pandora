@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +8,10 @@ public class SWMGameManager : MonoBehaviour
     [SerializeField] private ChestSpawnerRandom spawner;
     [SerializeField] private SWMHUD hud;
     [SerializeField] private SWMConfig config;
-    [SerializeField] private SWMSessionRecorder recorder;
+
+    // REPLACED: recorder -> sessionData
+    [Header("Session Data")]
+    [SerializeField] private SessionDataSO sessionData;
 
     [Header("Protocol Day (1..7)")]
     [SerializeField, Range(1, 7)] private int day = 1;
@@ -37,6 +41,7 @@ public class SWMGameManager : MonoBehaviour
     private int withinErrors;
     private int totalSelections;
 
+    // Keeping your SWMTrialData code in place (not used for session now)
     private SWMTrialData currentData;
 
     void Start() => StartDay(day);
@@ -45,6 +50,14 @@ public class SWMGameManager : MonoBehaviour
     {
         day = Mathf.Clamp(dayNumber, 1, 7);
         dayCfg = config.GetDay(day);
+
+       
+
+        if (sessionData == null)
+        {
+            Debug.LogError("SWMGameManager: SessionDataSO is NOT assigned.");
+            return;
+        }
 
         trialIndex = 0;
 
@@ -60,7 +73,7 @@ public class SWMGameManager : MonoBehaviour
         pool.Clear();
         chestId.Clear();
 
-        pool = spawner.SpawnPool(poolSize,this);
+        pool = spawner.SpawnPool(poolSize, this);
 
         // Assign stable ids 0..poolSize-1 (NO SetIndex)
         for (int i = 0; i < pool.Count; i++)
@@ -73,7 +86,7 @@ public class SWMGameManager : MonoBehaviour
     {
         if (trialIndex >= dayCfg.trials)
         {
-            recorder?.SaveDay(day);
+            // recorder?.SaveDay(day);  <-- REMOVED
             hud?.ShowDayComplete();
             return;
         }
@@ -107,7 +120,7 @@ public class SWMGameManager : MonoBehaviour
         }
 
         trialStartTime = Time.time;
-        currentData = NewTrialDataSkeleton();
+        currentData = NewTrialDataSkeleton(); // kept, but no longer saved to recorder
     }
 
     public void OnChestPressed(SWMChest chest)
@@ -160,7 +173,6 @@ public class SWMGameManager : MonoBehaviour
 
     private int GetChestId(SWMChest chest)
     {
-        // If it somehow wasn't mapped, fall back to list index
         if (chestId.TryGetValue(chest, out int id)) return id;
         return pool.IndexOf(chest);
     }
@@ -180,8 +192,31 @@ public class SWMGameManager : MonoBehaviour
         currentData.completion_time_ms = completionMs;
         currentData.first_click_latency_ms = firstClickLatencyMs;
 
-        recorder?.AddTrial(currentData);
+        // recorder?.AddTrial(currentData);  <-- REMOVED
         currentData = null;
+
+        //   WRITE UNIVERSAL RECORD TO SessionDataSO (same as Constellation)
+        // Define "wrong attempts" for SWM as total errors:
+        int wrongAttempts = betweenErrors + withinErrors;
+
+        // Define "span" for SWM as treasures to find (difficulty driver)
+        int span = goalCollected;
+
+        // Define "target_sequence" for SWM as the treasure indices (which boxes were correct targets)
+        var targets = new List<int>(treasureIndices);
+        targets.Sort();
+
+        sessionData.Add(new TrialRecord
+        {
+            minigame_id = "SWM",
+            day = day,
+            trial_index = trialIndex + 1,
+            span = span,
+            target_sequence = targets,
+            wrong_attempts = wrongAttempts,
+            completion_time_ms = completionMs,
+            timestamp_iso = DateTime.UtcNow.ToString("o")
+        });
 
         trialIndex++;
         hud?.SetTrialsDone(trialIndex);
@@ -208,7 +243,7 @@ public class SWMGameManager : MonoBehaviour
 
             data.box_positions.Add(new SWMBoxPos
             {
-                box_id = i, // stable id within this pool
+                box_id = i,
                 x = rt.anchoredPosition.x,
                 y = rt.anchoredPosition.y
             });
@@ -236,7 +271,7 @@ public class SWMGameManager : MonoBehaviour
 
         for (int i = 0; i < k; i++)
         {
-            int j = Random.Range(i, n);
+            int j =   UnityEngine.Random.Range(i, n);
             (pool[i], pool[j]) = (pool[j], pool[i]);
         }
 

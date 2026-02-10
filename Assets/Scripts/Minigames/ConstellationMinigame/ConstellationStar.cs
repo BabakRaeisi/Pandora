@@ -3,16 +3,18 @@ using UnityEngine.UI;
 
 public class ConstellationStar : MonoBehaviour
 {
-    public int id;            // 1..9
+    public int id;                  // 1..9
     public Button button;
     public Image image;
-    public RectTransform Rect;
 
-    [Range(0f, 1f)] public float dimAlpha = 0.3f;
+    [Header("Sprites")]
+    public Sprite dimSprite;
+    public Sprite glowSprite;
+
+    public RectTransform Rect => (RectTransform)transform;
 
     void Awake()
     {
-          Rect = (RectTransform)transform;
         if (!button) button = GetComponent<Button>();
         if (!image) image = GetComponent<Image>();
         SetDim();
@@ -20,15 +22,13 @@ public class ConstellationStar : MonoBehaviour
 
     public void SetDim()
     {
-        Color c = image.color;
-        c.a = dimAlpha;
-        image.color = c;
+        image.sprite = dimSprite;
+        image.enabled = true;
     }
 
-    public void SetBright()
+    public void SetGlow()
     {
-        Color c = image.color;
-        c.a = 1f;
-        image.color = c;
+        image.sprite = glowSprite;
+        image.enabled = true;
     }
 }

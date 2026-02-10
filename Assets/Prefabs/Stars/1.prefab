@@ -133,8 +133,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a56d0d64920148246be6924ce0c6177c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  id: 1
+  id: 3
   button: {fileID: 6943326222087833097}
   image: {fileID: 7240379959724376318}
-  Rect: {fileID: 3916673733977703890}
-  dimAlpha: 0.3
+  dimSprite: {fileID: -4075574763027894432, guid: da41b82e3e5402a48a680136ad3b0e2b, type: 3}
+  glowSprite: {fileID: 5649560835770926603, guid: dcd47a2ca0e08de49ae7e7d272eeb3d0, type: 3}

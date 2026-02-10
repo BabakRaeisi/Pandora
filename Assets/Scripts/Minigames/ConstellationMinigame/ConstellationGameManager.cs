@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,30 +9,32 @@ public class ConstellationGameManager : MonoBehaviour
     [SerializeField] private ConstellationController controller;
     [SerializeField] private ConstellationHUD hud;
     [SerializeField] private ConstellationConfigSO config;
+    [SerializeField] private TimedPanel wrongPatternPanel;
 
-    [Header("Failure UI")]
-    [SerializeField] private TimedPanel wrongPatternPanel;  // your existing message box
-    [SerializeField] private float wrongPanelSeconds = 1.5f;
+    [Header("Session Data")]
+    [SerializeField] private SessionDataSO sessionData;
 
-    [Header("Protocol Day (1..7)")]
+    [Header("Protocol Day")]
     [SerializeField, Range(1, 7)] private int day = 1;
 
-    private ConstellationConfigSO.DayConfig dayCfg;
+    // Optional events (UI/debug/tools)
+    public event Action TrialStarted;
+    public event Action TrialFailed;
+    public event Action TrialSucceeded;
 
-    // counts ONLY successful trials
-    private int successCount;
+    ConstellationConfigSO.DayConfig dayCfg;
 
-    // prevents double finish firing
-    private bool busy;
+    int successIndex;
+    int wrongAttempts;
+    bool busy;
+
+    int[] currentSequence;
+    HashSet<int> visibleSet;
+
+    float trialStartTime;
 
     void Start()
     {
-        if (!controller || !hud || !config)
-        {
-            Debug.LogError("ConstellationGameManager: Assign controller, hud, and config in Inspector.");
-            return;
-        }
-
         controller.OnTrialFinished += HandleTrialFinished;
         StartDay(day);
     }
@@ -39,101 +42,118 @@ public class ConstellationGameManager : MonoBehaviour
     public void StartDay(int dayNumber)
     {
         day = Mathf.Clamp(dayNumber, 1, 7);
-
         dayCfg = config.GetDay(day);
+
         if (dayCfg == null)
         {
-            Debug.LogError($"ConstellationGameManager: No DayConfig found for day {day}.");
+            Debug.LogError($"No DayConfig for day {day}");
             return;
         }
 
-        successCount = 0;
-        busy = false;
-
+        successIndex = 0;
         hud.SetupDay(dayCfg.trials);
         hud.SetTrialsDone(0);
 
         StartNewTrial();
     }
 
-    private void StartNewTrial()
+    void StartNewTrial()
     {
-        hud.SetupTrial();
+        wrongAttempts = 0;
+        trialStartTime = Time.time;
 
-        int[] sequence = GenerateUniqueSequence(dayCfg.span);
-        controller.BeginTrial(sequence, dayCfg.starOnSeconds, dayCfg.gapSeconds);
+        currentSequence = GenerateUniqueSequence(dayCfg.span);
+        visibleSet = new HashSet<int>(currentSequence);
+
+        TrialStarted?.Invoke();
+
+        hud.SetupTrial();
+        controller.ResetAll();
+        controller.SetVisibleStars(visibleSet);
+        controller.BeginTrial(currentSequence, dayCfg.starOnSeconds, dayCfg.gapSeconds);
     }
 
-    private void HandleTrialFinished(bool success)
+    public void ReplaySameTrial()
+    {
+        hud.SetupTrial();
+        controller.ResetAll();
+        controller.SetVisibleStars(visibleSet);
+        controller.BeginTrial(currentSequence, dayCfg.starOnSeconds, dayCfg.gapSeconds);
+    }
+
+    void HandleTrialFinished(bool success)
     {
         if (busy) return;
         busy = true;
 
+        int trialIndex1Based = successIndex + 1;
+
         if (success)
         {
-            successCount++;
-            hud.SetTrialsDone(successCount);
+            int durationMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
 
-            if (successCount >= dayCfg.trials)
+          
+            //   WRITE TO SESSION DATA
+            sessionData.Add(new TrialRecord
+            {
+                minigame_id = "Constellation",
+                day = day,
+                trial_index = trialIndex1Based,
+                span = dayCfg.span,
+                target_sequence = new List<int>(currentSequence),
+                wrong_attempts = wrongAttempts,
+                completion_time_ms = durationMs,
+                timestamp_iso = DateTime.UtcNow.ToString("o")
+            });
+
+            TrialSucceeded?.Invoke();
+
+            successIndex++;
+            hud.SetTrialsDone(successIndex);
+
+            if (successIndex >= dayCfg.trials)
             {
                 hud.ShowDayComplete();
                 busy = false;
                 return;
             }
 
-            // success: wait for player to press Next
             hud.ShowTrialComplete();
             busy = false;
         }
         else
         {
-            // fail: show panel briefly then reset the trial automatically
+            wrongAttempts++;
+            TrialFailed?.Invoke();
+
+            if (wrongPatternPanel)
+                wrongPatternPanel.Show();
+
             StartCoroutine(FailRoutine());
         }
     }
 
-    private IEnumerator FailRoutine()
+    IEnumerator FailRoutine()
     {
-        // show your error message box briefly
-        if (wrongPatternPanel)
-        {
-            // Try common APIs:
-            // 1) wrongPatternPanel.Show(wrongPanelSeconds);
-            // 2) wrongPatternPanel.Show();
-            // If #1 doesn't compile, switch to #2.
-
-            wrongPatternPanel.Show( );
-        }
-
-        // small pause so user sees the feedback
-        yield return new WaitForSeconds(wrongPanelSeconds);
-
-        // reset trial immediately
-        controller.ResetAll();
-        StartNewTrial();
-
+        yield return new WaitForSeconds(0.3f);
+        ReplaySameTrial();
         busy = false;
     }
 
-    // Hook this to your Footer Next Trial button OnClick (only used on success)
     public void OnNextTrialButton()
     {
         if (busy) return;
-        if (dayCfg != null && successCount >= dayCfg.trials) return;
-
         StartNewTrial();
     }
 
-    private static int[] GenerateUniqueSequence(int span)
+    static int[] GenerateUniqueSequence(int span)
     {
-        span = Mathf.Clamp(span, 1, 9);
-
-        List<int> pool = new List<int>(9);
+        List<int> pool = new();
         for (int i = 1; i <= 9; i++) pool.Add(i);
 
         for (int i = 0; i < span; i++)
         {
-            int j = Random.Range(i, pool.Count);
+            int j = UnityEngine.Random.Range(i, pool.Count);
             (pool[i], pool[j]) = (pool[j], pool[i]);
         }
 

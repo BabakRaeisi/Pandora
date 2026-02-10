@@ -35,7 +35,19 @@ public class ConstellationController : MonoBehaviour
 
         ResetAll();
     }
+    // Show only the ids included. Others are hidden (inactive).
+    public void SetVisibleStars(HashSet<int> visibleIds)
+    {
+        foreach (var s in stars)
+            s.gameObject.SetActive(visibleIds.Contains(s.id));
+    }
 
+    // Convenience: show all 9
+    public void ShowAllStars()
+    {
+        foreach (var s in stars)
+            s.gameObject.SetActive(true);
+    }
     public void BeginTrial(int[] sequence, float starOnSeconds, float gapSeconds)
     {
         StopAllCoroutines();
@@ -52,7 +64,7 @@ public class ConstellationController : MonoBehaviour
         for (int i = 0; i < targetSequence.Length; i++)
         {
             var star = GetStar(targetSequence[i]);
-            star.SetBright();
+            star.SetGlow();
             yield return new WaitForSeconds(starOnSeconds);
             star.SetDim();
             yield return new WaitForSeconds(gapSeconds);
@@ -66,7 +78,7 @@ public class ConstellationController : MonoBehaviour
         if (!inputEnabled) return;
         if (selected.Count > 0 && selected[^1] == star) return;
 
-        star.SetBright();
+        star.SetGlow();
         selected.Add(star);
 
         if (selected.Count >= 2)
