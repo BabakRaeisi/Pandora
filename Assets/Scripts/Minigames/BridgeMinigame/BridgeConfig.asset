@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b04368598c152144ebe73d008061c5b2, type: 3}
+  m_Name: BridgeConfig
+  m_EditorClassIdentifier: Assembly-CSharp::BridgeConfig
+  days:
+  - day: 1
+    trials: 5
+    minPieces: 3
+    maxPieces: 4
+    displayMs: 1200
+    gapMs: 300
+    pattern: 0
+    allowEnvironmentFX: 0
+  - day: 2
+    trials: 5
+    minPieces: 3
+    maxPieces: 4
+    displayMs: 1200
+    gapMs: 300
+    pattern: 0
+    allowEnvironmentFX: 0
+  - day: 3
+    trials: 6
+    minPieces: 4
+    maxPieces: 5
+    displayMs: 1000
+    gapMs: 300
+    pattern: 1
+    allowEnvironmentFX: 0
+  - day: 4
+    trials: 6
+    minPieces: 4
+    maxPieces: 5
+    displayMs: 1000
+    gapMs: 300
+    pattern: 2
+    allowEnvironmentFX: 0
+  - day: 5
+    trials: 7
+    minPieces: 5
+    maxPieces: 6
+    displayMs: 900
+    gapMs: 300
+    pattern: 3
+    allowEnvironmentFX: 0
+  - day: 6
+    trials: 7
+    minPieces: 6
+    maxPieces: 7
+    displayMs: 800
+    gapMs: 300
+    pattern: 4
+    allowEnvironmentFX: 1
+  - day: 7
+    trials: 8
+    minPieces: 7
+    maxPieces: 8
+    displayMs: 800
+    gapMs: 300
+    pattern: 4
+    allowEnvironmentFX: 1
