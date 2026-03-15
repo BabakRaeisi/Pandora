@@ -1268,7 +1268,6 @@ GameObject:
   - component: {fileID: 578731120}
   - component: {fileID: 578731122}
   - component: {fileID: 578731121}
-  - component: {fileID: 578731126}
   - component: {fileID: 578731127}
   m_Layer: 5
   m_Name: Play Area
@@ -1348,19 +1347,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 578731119}
   m_CullTransparentMesh: 1
---- !u!114 &578731126
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 578731119}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57e334c1e7b80bd4b85c09be5f7d4c5a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SceneFlow
-  mainMenuSceneName: 1
 --- !u!114 &578731127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1418,6 +1404,22 @@ PrefabInstance:
     - target: {fileID: 2601777437456371897, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: BridgeGameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2838575049498239951, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2838575049498239951, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2838575049498239951, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2838575049498239951, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3454658261487846912, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
       propertyPath: m_Pivot.x
@@ -1502,6 +1504,38 @@ PrefabInstance:
     - target: {fileID: 7328376353326517348, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
       propertyPath: m_Name
       value: Footer
+      objectReference: {fileID: 0}
+    - target: {fileID: 9090221370341104120, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9090221370341104120, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9090221370341104120, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9090221370341104120, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9154919390475254569, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9154919390475254569, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9154919390475254569, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9154919390475254569, guid: 92421ae499bd8874b9745c6f25c558c0, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3576,7 +3610,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1560669099618720296, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5484127384703473662, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
       propertyPath: m_Pivot.x
@@ -3659,14 +3693,41 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8084982255656755024, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084982255656755024, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 578731126}
+      objectReference: {fileID: 4170754805400712083}
+    - target: {fileID: 8084982255656755024, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: GoToMainMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084982255656755024, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: SceneFlow, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084982255656755024, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+--- !u!114 &4170754805400712083 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5044699061561530527, guid: dc187ccbb5c7c99459b17fe784cf36b6, type: 3}
+  m_PrefabInstance: {fileID: 4170754805400712082}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57e334c1e7b80bd4b85c09be5f7d4c5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneFlow
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

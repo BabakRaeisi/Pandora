@@ -3,10 +3,10 @@ using UnityEngine.SceneManagement;
 
 public class SceneFlow : MonoBehaviour
 {
-    [SerializeField] private int mainMenuSceneName ;
+    [SerializeField] private string mainMenuSceneName ;
 
     public void GoToMainMenu()
     {
-        SceneManager.LoadScene(mainMenuSceneName);
+        LoadingScreenController.Instance.LoadScene(mainMenuSceneName);
     }
 }
