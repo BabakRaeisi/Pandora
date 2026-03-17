@@ -1,5 +1,4 @@
-﻿// MainMenuUI.cs
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using RTLTMPro;
@@ -16,14 +15,22 @@ public class MainMenuUI : MonoBehaviour
     public GameObject defaultProfileButton;
     public GameObject userProfileButton;
 
-    [Header("User Display")]
+    [Header("User Display (Main Menu)")]
     public Image userAvatarImage;
     public RTLTextMeshPro usernameText;
     public Sprite[] avatarSprites;
 
+    [Header("Profile Details Panel")]
+    public RTLTextMeshPro detailsNameText;
+    public RTLTextMeshPro detailsPhoneText;
+    public RTLTextMeshPro detailsAgeText;
+
     void Start()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.StopAmbient();
         Refresh();
+        AudioManager.Instance.Play("MusicLoop");
     }
 
     public void Refresh()
@@ -41,22 +48,38 @@ public class MainMenuUI : MonoBehaviour
             return;
 
         usernameText.text = data.profile.playerName;
-        Debug.Log(data.profile.playerName); 
+
         int index = data.profile.avatarIndex;
         if (index >= 0 && index < avatarSprites.Length)
             userAvatarImage.sprite = avatarSprites[index];
+    }
+
+    void FillProfileDetails()
+    {
+        var data = PlayerDataManager.Instance.Data;
+
+        if (data == null || data.profile == null)
+            return;
+
+        detailsNameText.text = data.profile.playerName;
+        detailsPhoneText.text = data.profile.phoneNumber;
+        detailsAgeText.text = data.profile.age.ToString();
     }
 
     public void OpenProfileSetup()
     {
         mainMenuPanel.FadeOut();
         profileSetupPanel.FadeIn();
+        AudioManager.Instance.Play("Button");
     }
 
     public void OpenProfileDetails()
     {
+        FillProfileDetails();
+
         mainMenuPanel.FadeOut();
         profileDetailsPanel.FadeIn();
+        AudioManager.Instance.Play("Button");
     }
 
     public void BackToMainFromSetup()
@@ -64,12 +87,13 @@ public class MainMenuUI : MonoBehaviour
         profileSetupPanel.FadeOut();
         mainMenuPanel.FadeIn();
         Refresh();
+        AudioManager.Instance.Play("Button");
     }
 
     public void BackToMainFromDetails()
     {
         profileDetailsPanel.FadeOut();
-       
         mainMenuPanel.FadeIn();
+        AudioManager.Instance.Play("Button");
     }
 }

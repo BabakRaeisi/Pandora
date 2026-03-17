@@ -28,6 +28,7 @@ public class ConstellationStar : MonoBehaviour
 
     public void SetGlow()
     {
+       
         image.sprite = glowSprite;
         image.enabled = true;
     }

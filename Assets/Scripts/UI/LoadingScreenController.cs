@@ -32,6 +32,11 @@ public class LoadingScreenController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+
+    }
+
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         Open();
@@ -47,6 +52,8 @@ public class LoadingScreenController : MonoBehaviour
         seq.Join(rightPanel.DOAnchorPosX(moveDistance, duration));
 
         seq.SetEase(Ease.InOutCubic);
+
+        AudioManager.Instance.Play("CloudsAway");
     }
 
     void Close()
@@ -59,6 +66,8 @@ public class LoadingScreenController : MonoBehaviour
         seq.Join(rightPanel.DOAnchorPosX(0, duration));
 
         seq.SetEase(Ease.InOutCubic);
+
+        AudioManager.Instance.Play("CloudsComeIn");
     }
 
     public void LoadScene(string sceneName)

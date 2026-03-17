@@ -29,7 +29,7 @@ public class BridgePieceUI : MonoBehaviour
     [SerializeField] private Button button;
 
     [Header("Opacity")]
-    [SerializeField, Range(0f, 1f)] private float idleOpacity = 0.30f;
+    [SerializeField, Range(0f, 1f)] private float idleOpacity = 0.70f;
     [SerializeField, Range(0f, 1f)] private float activeOpacity = 1.00f;
 
     [Header("Tints")]

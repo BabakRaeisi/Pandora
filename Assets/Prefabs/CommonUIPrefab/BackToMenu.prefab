@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 5484127384703473662}
   - component: {fileID: 947421217691206533}
   - component: {fileID: 9073252438618129057}
+  - component: {fileID: 7551868456234305254}
+  - component: {fileID: 3267483088454139642}
   m_Layer: 5
   m_Name: BackToMenu
   m_TagString: Untagged
@@ -79,6 +81,31 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!225 &7551868456234305254
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1560669099618720296}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &3267483088454139642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1560669099618720296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 486c5e5eb9196c541bbea122ab3872d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIPanelFader
+  fadeDuration: 0.8
 --- !u!1 &2179223143631234273
 GameObject:
   m_ObjectHideFlags: 0

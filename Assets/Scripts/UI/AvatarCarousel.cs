@@ -52,6 +52,7 @@ public class AvatarCarousel : MonoBehaviour
 
         if (snapRoutine != null) StopCoroutine(snapRoutine);
         snapRoutine = StartCoroutine(SnapTo(targetPos));
+        AudioManager.Instance.Play("Button");
     }
  
     Vector2 GetCenteredPosition(RectTransform item)

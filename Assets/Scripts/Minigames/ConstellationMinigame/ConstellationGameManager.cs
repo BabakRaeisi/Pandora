@@ -17,7 +17,6 @@ public class ConstellationGameManager : MonoBehaviour
     [Header("Protocol Day")]
     [SerializeField, Range(1, 7)] private int day = 1;
 
-    // Optional events (UI/debug/tools)
     public event Action TrialStarted;
     public event Action TrialFailed;
     public event Action TrialSucceeded;
@@ -36,7 +35,10 @@ public class ConstellationGameManager : MonoBehaviour
     void Start()
     {
         controller.OnTrialFinished += HandleTrialFinished;
-        StartDay(day);
+        StartDay(PlayerDataManager.Instance.Data.currentDay);
+        AudioManager.Instance.StopAll();
+        AudioManager.Instance.Play("SpaceAmbientSound");
+       
     }
 
     public void StartDay(int dayNumber)
@@ -59,6 +61,7 @@ public class ConstellationGameManager : MonoBehaviour
 
     void StartNewTrial()
     {
+         
         wrongAttempts = 0;
         trialStartTime = Time.time;
 
@@ -75,10 +78,12 @@ public class ConstellationGameManager : MonoBehaviour
 
     public void ReplaySameTrial()
     {
+   
         hud.SetupTrial();
         controller.ResetAll();
         controller.SetVisibleStars(visibleSet);
         controller.BeginTrial(currentSequence, dayCfg.starOnSeconds, dayCfg.gapSeconds);
+         
     }
 
     void HandleTrialFinished(bool success)
@@ -90,10 +95,9 @@ public class ConstellationGameManager : MonoBehaviour
 
         if (success)
         {
+            AudioManager.Instance.Play("SuccessDing2");
             int durationMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
 
-          
-            //   WRITE TO SESSION DATA
             sessionData.Add(new TrialRecord
             {
                 minigame_id = "Constellation",
@@ -113,7 +117,17 @@ public class ConstellationGameManager : MonoBehaviour
 
             if (successIndex >= dayCfg.trials)
             {
+                var data = PlayerDataManager.Instance.Data;
+
+                if (!data.constellationCompletedToday)
+                {
+                    data.constellationCompletedToday = true;
+                    data.miniGamesCompletedToday += 1;
+                    PlayerDataManager.Instance.Save();
+                }
+
                 hud.ShowDayComplete();
+
                 busy = false;
                 return;
             }
@@ -123,6 +137,7 @@ public class ConstellationGameManager : MonoBehaviour
         }
         else
         {
+            AudioManager.Instance.Play("StarError");
             wrongAttempts++;
             TrialFailed?.Invoke();
 
@@ -142,6 +157,7 @@ public class ConstellationGameManager : MonoBehaviour
 
     public void OnNextTrialButton()
     {
+       
         if (busy) return;
         StartNewTrial();
     }

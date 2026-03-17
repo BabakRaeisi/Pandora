@@ -1,6 +1,5 @@
 using RTLTMPro;
 using System;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +22,15 @@ public class MainMenuDateLock : MonoBehaviour
     {
         var data = PlayerDataManager.Instance.Data;
 
+        bool hasProfile = data != null && data.profileCompleted && data.profile != null;
+
+        if (!hasProfile)
+        {
+            startButton.interactable = false;
+            countdownText.gameObject.SetActive(false);
+            return;
+        }
+
         if (string.IsNullOrEmpty(data.lastDayCompletionTime))
         {
             startButton.interactable = true;
@@ -35,6 +43,7 @@ public class MainMenuDateLock : MonoBehaviour
 
         if (DateTime.UtcNow >= next)
         {
+            ResetDailyProgress();
             startButton.interactable = true;
             countdownText.gameObject.SetActive(false);
         }
@@ -49,6 +58,9 @@ public class MainMenuDateLock : MonoBehaviour
     {
         var data = PlayerDataManager.Instance.Data;
 
+        if (data.programCompleted)
+            return;
+
         if (string.IsNullOrEmpty(data.lastDayCompletionTime))
             return;
 
@@ -59,6 +71,7 @@ public class MainMenuDateLock : MonoBehaviour
 
         if (remaining.TotalSeconds <= 0)
         {
+            ResetDailyProgress();
             startButton.interactable = true;
             countdownText.gameObject.SetActive(false);
             return;
@@ -69,5 +82,21 @@ public class MainMenuDateLock : MonoBehaviour
             remaining.Hours.ToString("00") + ":" +
             remaining.Minutes.ToString("00") + ":" +
             remaining.Seconds.ToString("00");
+    }
+
+    void ResetDailyProgress()
+    {
+        var data = PlayerDataManager.Instance.Data;
+
+        data.miniGamesCompletedToday = 0;
+        data.trialsCompletedInCurrentGame = 0;
+
+        data.constellationCompletedToday = false;
+        data.swmCompletedToday = false;
+        data.bridgeCompletedToday = false;
+
+        data.lastDayCompletionTime = "";
+
+        PlayerDataManager.Instance.Save();
     }
 }

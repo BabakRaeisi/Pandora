@@ -1,4 +1,4 @@
-// BridgeGameManager.cs (FULL) — fixes Day 4: always uses 5 pieces and forces at least one switch
+// BridgeGameManager.cs
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -83,7 +83,10 @@ public class BridgeGameManager : MonoBehaviour
             if (kv.Value) kv.Value.Clicked -= OnPiecePressed;
     }
 
-    private void Start() => StartDay(day);
+    private void Start() { StartDay(PlayerDataManager.Instance.Data.currentDay); 
+    AudioManager.Instance.StopAll();
+        AudioManager.Instance.Play("BridgeAmbient");
+    }
 
     public void StartDay(int dayNumber)
     {
@@ -119,13 +122,11 @@ public class BridgeGameManager : MonoBehaviour
         builtCount = 0;
         wrongAttempts = 0;
 
-        // IMPORTANT: span rows = minPieces (Option 2 behavior)
         activeRows = Mathf.Clamp(dayCfg.minPieces, 2, totalRows);
 
-        // IMPORTANT FIX: Day 4 must not pick len=4 because that cannot zigzag in 2 columns.
         if (dayCfg.pattern == BridgePattern.ZigZag)
         {
-            goalPieces = Mathf.Clamp(dayCfg.maxPieces, activeRows + 1, activeRows * 2); // force extras >= 1
+            goalPieces = Mathf.Clamp(dayCfg.maxPieces, activeRows + 1, activeRows * 2);
         }
         else
         {
@@ -144,16 +145,16 @@ public class BridgeGameManager : MonoBehaviour
         bool forceSwitch = (dayCfg.pattern == BridgePattern.ZigZag);
 
         targetSequence = BridgePathGenerator.Generate2ColPath(
-            activeRows: activeRows,
-            targetLength: goalPieces,
-            startFromBottom: startFromBottom,
-            forceAtLeastOneSwitch: forceSwitch,
-            maxAttempts: 3000
+            activeRows,
+            goalPieces,
+            startFromBottom,
+            forceSwitch,
+            3000
         );
 
         if (targetSequence == null || targetSequence.Count == 0)
         {
-            Debug.LogError($"BridgeGameManager: Failed to generate path day={day} pattern={dayCfg.pattern} rows={activeRows} len={goalPieces}");
+            Debug.LogError($"BridgeGameManager: Failed to generate path day={day}");
             return;
         }
 
@@ -213,7 +214,6 @@ public class BridgeGameManager : MonoBehaviour
         }
         else
         {
-            // fallback: fill playArea vertically
             var pr = playArea.rect;
             topY = pr.height * 0.5f - 140f;
             bottomY = -pr.height * 0.5f + 140f;
@@ -281,7 +281,7 @@ public class BridgeGameManager : MonoBehaviour
             builtCount++;
             piece.SetState(BridgePieceState.Built);
             hud?.SetCollectedFound(builtCount);
-
+            AudioManager.Instance.Play("StoneCorrectStep");
             if (builtCount >= goalPieces)
                 CompleteTrial();
         }
@@ -290,6 +290,7 @@ public class BridgeGameManager : MonoBehaviour
             wrongAttempts++;
             piece.FlashError();
             hud?.AddErrorAndWarn();
+            AudioManager.Instance.Play("StepStoneWrong");
         }
     }
 
@@ -315,7 +316,25 @@ public class BridgeGameManager : MonoBehaviour
 
         trialIndex++;
         hud?.SetTrialsDone(trialIndex);
-        hud?.ShowTrialComplete();
+
+        if (trialIndex >= dayCfg.trials)
+        {
+            var data = PlayerDataManager.Instance.Data;
+
+            if (!data.bridgeCompletedToday)
+            {
+                data.bridgeCompletedToday = true;
+                data.miniGamesCompletedToday += 1;
+                PlayerDataManager.Instance.Save();
+            }
+
+            hud?.ShowDayComplete();
+           
+        }
+        else
+        {
+            hud?.ShowTrialComplete();
+        }
     }
 
     private void ResetActivePiecesToIdle()

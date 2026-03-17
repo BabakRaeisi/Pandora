@@ -64,6 +64,7 @@ public class ConstellationController : MonoBehaviour
         for (int i = 0; i < targetSequence.Length; i++)
         {
             var star = GetStar(targetSequence[i]);
+            AudioManager.Instance.Play("Sparkle");
             star.SetGlow();
             yield return new WaitForSeconds(starOnSeconds);
             star.SetDim();
@@ -80,6 +81,7 @@ public class ConstellationController : MonoBehaviour
 
         star.SetGlow();
         selected.Add(star);
+        AudioManager.Instance.Play("StarClick");
 
         if (selected.Count >= 2)
             DrawLine(selected[^2], star);
@@ -97,7 +99,10 @@ public class ConstellationController : MonoBehaviour
         for (int i = 0; i < targetSequence.Length; i++)
         {
             if (selected[i].id != targetSequence[i])
+            {
                 return false;
+                
+            }
         }
         return true;
     }
@@ -116,6 +121,7 @@ public class ConstellationController : MonoBehaviour
 
     void DrawLine(ConstellationStar a, ConstellationStar b)
     {
+       
         RectTransform seg = Instantiate(linePrefab, linesContainer);
 
         Vector2 aPos = (Vector2)playArea.InverseTransformPoint(a.Rect.position);

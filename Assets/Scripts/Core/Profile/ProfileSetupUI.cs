@@ -62,6 +62,7 @@ public class ProfileSetupUI : MonoBehaviour
         PlayerDataManager.Instance.SetProfile(profile);
 
         mainMenuUI.BackToMainFromSetup();
+       
     }
 
     public void Cancel()

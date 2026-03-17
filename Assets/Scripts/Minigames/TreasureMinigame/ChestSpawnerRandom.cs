@@ -15,7 +15,7 @@ public class ChestSpawnerRandom : MonoBehaviour
     [SerializeField] private float minGap = 20f;
     [SerializeField] private float minDistance = 120f;     // tweak based on chest size + desired spacing
     [SerializeField] private int maxAttemptsPerChest = 200;
-    [SerializeField] private int layoutAttempts = 40;      // tries to find a full non-overlapping layout
+ 
 
     // Spawn ONCE for the day, initialize Index + manager, and place inside bounds.
     public List<SWMChest> SpawnPool(int count, SWMGameManager gm)

@@ -8,5 +8,6 @@ public class SceneFlow : MonoBehaviour
     public void GoToMainMenu()
     {
         LoadingScreenController.Instance.LoadScene(mainMenuSceneName);
+        AudioManager.Instance.Play("Button");
     }
 }

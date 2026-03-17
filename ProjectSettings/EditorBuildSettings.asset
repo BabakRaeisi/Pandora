@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Minigame_Constellation.unity
     guid: e88dd97885c6b344d8c0665f6f3f19e5
   - enabled: 1
+    path: Assets/Scenes/Minigame_Bridge.unity
+    guid: 6c14c70309aea8540973fbfc1919849e
+  - enabled: 1
     path: Assets/Scenes/Minigame_Treasure.unity
     guid: a9dbf7c1369eaf744a46ff71cb9fff73
   m_configObjects:
