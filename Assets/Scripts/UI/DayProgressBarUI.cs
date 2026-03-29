@@ -1,7 +1,6 @@
-// DayProgressBarUI.cs
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using DG.Tweening;
 using RTLTMPro;
 
 public class DayProgressBarUI : MonoBehaviour
@@ -12,34 +11,63 @@ public class DayProgressBarUI : MonoBehaviour
     [Header("Text")]
     public RTLTextMeshPro remainingDaysText;
 
- 
+    [Header("Animation")]
+    public float fillDuration = 0.8f;
 
-    const int totalDays = 7;
+    const int totalDays = 6;
+    Tween fillTween;
 
     void Start()
     {
         Refresh();
     }
 
+    void OnDestroy()
+    {
+        fillTween?.Kill();
+    }
+
     public void Refresh()
     {
         var data = PlayerDataManager.Instance.Data;
 
-        int currentDay =  Mathf.Clamp(data.currentDay, 1, totalDays);
+        int currentDay = Mathf.Clamp(data.currentDay, 1, totalDays);
 
-        // progress fill
         float progress = (float)(currentDay - 1) / totalDays;
         progressBar.value = progress;
 
-        // remaining days
         int remaining = totalDays - (currentDay - 1);
 
-        if (remaining > 0)
-            remainingDaysText.text = remaining + " days remaining";
+        if (remaining > 1)
+            remainingDaysText.text = remaining + " روز باقی مونده";
+        else if (remaining == 1)
+            remainingDaysText.text = "روز مانده پایانی";
         else
-            remainingDaysText.text = "Final day";
+            remainingDaysText.text = "پایان";
+    }
 
-        // key visual only when finished
-     
+    public Tween AnimateDayAdvance(bool finalDay)
+    {
+        fillTween?.Kill();
+
+        var data = PlayerDataManager.Instance.Data;
+
+        int currentDay = Mathf.Clamp(data.currentDay, 1, totalDays);
+
+        float from = (float)(currentDay - 1) / totalDays;
+        float to = finalDay
+            ? 1f
+            : (float)currentDay / totalDays;
+
+        progressBar.value = from;
+
+        fillTween = DOTween.To(
+            () => progressBar.value,
+            x => progressBar.value = x,
+            to,
+            fillDuration
+        ).SetEase(Ease.OutCubic);
+
+        return fillTween;
     }
 }

@@ -16,6 +16,7 @@ public class MainMenuDateLock : MonoBehaviour
     void Update()
     {
         UpdateCountdown();
+        CheckLock(); // ensure queue state is always respected
     }
 
     void CheckLock()
@@ -28,6 +29,15 @@ public class MainMenuDateLock : MonoBehaviour
         {
             startButton.interactable = false;
             countdownText.gameObject.SetActive(false);
+            return;
+        }
+
+        // BLOCK if queue has pending data
+        if (OfflineQueue.Instance != null && OfflineQueue.Instance.HasPending())
+        {
+            startButton.interactable = false;
+            countdownText.gameObject.SetActive(true);
+            countdownText.text = "Uploading previous session...";
             return;
         }
 
@@ -59,7 +69,10 @@ public class MainMenuDateLock : MonoBehaviour
         var data = PlayerDataManager.Instance.Data;
 
         if (data.programCompleted)
+        {
+            startButton.interactable = true;
             return;
+        }
 
         if (string.IsNullOrEmpty(data.lastDayCompletionTime))
             return;

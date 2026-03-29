@@ -14,6 +14,15 @@ public class SessionDataSO : ScriptableObject
 
     public void Add(TrialRecord record)
     {
+        if (record == null)
+            return;
+
+        if (record.target_sequence == null)
+            record.target_sequence = new List<int>();
+
+        if (string.IsNullOrWhiteSpace(record.timestamp_iso))
+            record.timestamp_iso = DateTime.UtcNow.ToString("o");
+
         trials.Add(record);
     }
 }

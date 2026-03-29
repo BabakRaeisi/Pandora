@@ -28,16 +28,6 @@ public class BridgePieceUI : MonoBehaviour
     [SerializeField] private Image image;
     [SerializeField] private Button button;
 
-    [Header("Opacity")]
-    [SerializeField, Range(0f, 1f)] private float idleOpacity = 0.70f;
-    [SerializeField, Range(0f, 1f)] private float activeOpacity = 1.00f;
-
-    [Header("Tints")]
-    [SerializeField] private Color idleTint = Color.white;
-    [SerializeField] private Color highlightTint = Color.white;
-    [SerializeField] private Color builtTint = Color.white;
-    [SerializeField] private Color errorTint = Color.red;
-
     [Header("Sprites (optional)")]
     [SerializeField] private Sprite baseSprite;
     [SerializeField] private Sprite highlightedSprite;
@@ -129,26 +119,18 @@ public class BridgePieceUI : MonoBehaviour
     private void ApplyVisual(BridgePieceState state)
     {
         Sprite s = baseSprite;
-        if (state == BridgePieceState.Highlighted && highlightedSprite) s = highlightedSprite;
-        if (state == BridgePieceState.Built && builtSprite) s = builtSprite;
+
+        if (state == BridgePieceState.Highlighted && highlightedSprite)
+            s = highlightedSprite;
+
+        else if (state == BridgePieceState.Built && builtSprite)
+            s = builtSprite;
+
+        // For Error → just keep base (or you can add error sprite later)
+
         image.sprite = s;
 
-        Color tint;
-        float alpha;
-
-        switch (state)
-        {
-            case BridgePieceState.Highlighted:
-                tint = highlightTint; alpha = activeOpacity; break;
-            case BridgePieceState.Built:
-                tint = builtTint; alpha = activeOpacity; break;
-            case BridgePieceState.Error:
-                tint = errorTint; alpha = activeOpacity; break;
-            default:
-                tint = idleTint; alpha = idleOpacity; break;
-        }
-
-        tint.a = alpha;
-        image.color = tint;
+        // ALWAYS fully visible, no tinting
+        image.color = Color.white;
     }
 }

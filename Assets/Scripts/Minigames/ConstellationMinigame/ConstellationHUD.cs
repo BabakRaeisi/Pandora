@@ -23,7 +23,7 @@ public class ConstellationHUD : MonoBehaviour
         trialsBar?.Setup(totalTrials);
         trialsBar?.SetFilled(0);
 
-        AudioManager.Instance.StopAll();
+     
         
         if (completionRoot) completionRoot.SetActive(false);
         if (nextTrialButtonRoot) nextTrialButtonRoot.SetActive(false);

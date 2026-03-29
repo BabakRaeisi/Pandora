@@ -1,5 +1,4 @@
-﻿// MiniGameButtonsUI.cs
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class MiniGameButtonsUI : MonoBehaviour
@@ -37,14 +36,23 @@ public class MiniGameButtonsUI : MonoBehaviour
 
         if (completed >= 3)
         {
-            for (int i = 0; i < buttons.Length; i++)
-            {
-                if (buttons[i].button != null)
-                    buttons[i].button.interactable = false;
+            ForceLockAll();
+        }
+        if (PlayerDataManager.Instance.Data.programCompleted)
+        {
+            ForceLockAll();
+        }
+    }
 
-                if (buttons[i].icon != null)
-                    buttons[i].icon.sprite = lockSprite;
-            }
+    public void ForceLockAll()
+    {
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i].button != null)
+                buttons[i].button.interactable = false;
+
+            if (buttons[i].icon != null)
+                buttons[i].icon.sprite = lockSprite;
         }
     }
 }

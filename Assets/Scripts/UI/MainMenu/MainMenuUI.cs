@@ -21,6 +21,7 @@ public class MainMenuUI : MonoBehaviour
     public Sprite[] avatarSprites;
 
     [Header("Profile Details Panel")]
+    public Image userAvatarDetailImage;
     public RTLTextMeshPro detailsNameText;
     public RTLTextMeshPro detailsPhoneText;
     public RTLTextMeshPro detailsAgeText;
@@ -60,7 +61,9 @@ public class MainMenuUI : MonoBehaviour
 
         if (data == null || data.profile == null)
             return;
-
+        int index = data.profile.avatarIndex;
+        if (index >= 0 && index < avatarSprites.Length)
+            userAvatarDetailImage.sprite = avatarSprites[index];
         detailsNameText.text = data.profile.playerName;
         detailsPhoneText.text = data.profile.phoneNumber;
         detailsAgeText.text = data.profile.age.ToString();

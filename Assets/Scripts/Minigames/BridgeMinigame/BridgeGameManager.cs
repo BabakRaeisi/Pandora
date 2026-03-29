@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using RTLTMPro;
 
 public class BridgeGameManager : MonoBehaviour
 {
@@ -10,6 +12,9 @@ public class BridgeGameManager : MonoBehaviour
     [SerializeField] private SWMHUD hud;
     [SerializeField] private BridgeConfig config;
     [SerializeField] private SessionDataSO sessionData;
+
+    [Header("Countdown")]
+    [SerializeField] private RTLTextMeshPro countdownText;
 
     [Header("UI Layout (Anchors)")]
     [SerializeField] private RectTransform playArea;
@@ -83,9 +88,33 @@ public class BridgeGameManager : MonoBehaviour
             if (kv.Value) kv.Value.Clicked -= OnPiecePressed;
     }
 
-    private void Start() { StartDay(PlayerDataManager.Instance.Data.currentDay); 
-    AudioManager.Instance.StopAll();
+    private void Start()
+    {
+        AudioManager.Instance.StopAll();
         AudioManager.Instance.Play("BridgeAmbient");
+
+        StartCoroutine(BeginGameAfterCountdown());
+    }
+
+    private IEnumerator BeginGameAfterCountdown()
+    {
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
+
+            countdownText.text = "3";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.text = "2";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.text = "1";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.gameObject.SetActive(false);
+        }
+
+        StartDay(PlayerDataManager.Instance.Data.currentDay);
     }
 
     public void StartDay(int dayNumber)
@@ -329,7 +358,6 @@ public class BridgeGameManager : MonoBehaviour
             }
 
             hud?.ShowDayComplete();
-           
         }
         else
         {

@@ -14,5 +14,5 @@ public class PlayerSaveData
     public bool programCompleted;
     public bool profileCompleted = false;
 
-    public string lastDayCompletionTime;   // ← new field
+    public string lastDayCompletionTime;    
 }

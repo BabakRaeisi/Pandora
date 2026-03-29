@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class ConstellationGameManager : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class ConstellationGameManager : MonoBehaviour
 
     [Header("Session Data")]
     [SerializeField] private SessionDataSO sessionData;
+
+    [Header("Countdown")]
+    [SerializeField] private TextMeshProUGUI countdownText;
 
     [Header("Protocol Day")]
     [SerializeField, Range(1, 7)] private int day = 1;
@@ -35,14 +39,36 @@ public class ConstellationGameManager : MonoBehaviour
     void Start()
     {
         controller.OnTrialFinished += HandleTrialFinished;
-        StartDay(PlayerDataManager.Instance.Data.currentDay);
+
         AudioManager.Instance.StopAll();
         AudioManager.Instance.Play("SpaceAmbientSound");
-       
+        StartCoroutine(BeginGameAfterCountdown());
+    }
+
+    IEnumerator BeginGameAfterCountdown()
+    {
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
+
+            countdownText.text = "3";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.text = "2";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.text = "1";
+            yield return new WaitForSeconds(1f);
+
+            countdownText.gameObject.SetActive(false);
+        }
+      
+        StartDay(PlayerDataManager.Instance.Data.currentDay);
     }
 
     public void StartDay(int dayNumber)
     {
+       
         day = Mathf.Clamp(dayNumber, 1, 7);
         dayCfg = config.GetDay(day);
 
@@ -61,7 +87,6 @@ public class ConstellationGameManager : MonoBehaviour
 
     void StartNewTrial()
     {
-         
         wrongAttempts = 0;
         trialStartTime = Time.time;
 
@@ -78,12 +103,10 @@ public class ConstellationGameManager : MonoBehaviour
 
     public void ReplaySameTrial()
     {
-   
         hud.SetupTrial();
         controller.ResetAll();
         controller.SetVisibleStars(visibleSet);
         controller.BeginTrial(currentSequence, dayCfg.starOnSeconds, dayCfg.gapSeconds);
-         
     }
 
     void HandleTrialFinished(bool success)
@@ -157,7 +180,6 @@ public class ConstellationGameManager : MonoBehaviour
 
     public void OnNextTrialButton()
     {
-       
         if (busy) return;
         StartNewTrial();
     }

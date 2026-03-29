@@ -4,10 +4,9 @@ using System;
 [Serializable]
 public class PlayerProfile
 {
-    public string playerId;
+    public string phoneNumber;  // stable identity key — used as unique player ID
     public string playerName;
-    public int age;
-    public string phoneNumber;
-    public int avatarIndex;
+    public int    age;
+    public int    avatarIndex;
     public string gender;
 }
