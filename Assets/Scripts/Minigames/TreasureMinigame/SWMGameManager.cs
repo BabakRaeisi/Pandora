@@ -9,15 +9,18 @@ public class SWMGameManager : MonoBehaviour
     [SerializeField] private ChestSpawnerRandom spawner;
     [SerializeField] private SWMHUD hud;
     [SerializeField] private SWMConfig config;
-
+    
     [Header("Session Data")]
     [SerializeField] private SessionDataSO sessionData;
 
-    [Header("Protocol Day (1..7)")]
-    [SerializeField, Range(1, 7)] private int day = 1;
+    // ── Current level state ───────────────────────────────────────────────────
+    private int currentLevel;
+    private SWMConfig.LevelConfig levelCfg;
 
-    private SWMConfig.DayConfig dayCfg;
-    private int trialIndex;
+    // ── Trial state ───────────────────────────────────────────────────────────
+    private int trialsCompleteInLevel;
+    private int consecutiveFailsOnLevel;
+    private int trialIndexInLevel;
 
     private List<SWMChest> pool = new();
     private int poolSize;
@@ -28,6 +31,7 @@ public class SWMGameManager : MonoBehaviour
     private int goalCollected;
     private HashSet<int> treasureIndices = new();
 
+    private float levelStartTime;
     private float trialStartTime;
     private float firstClickTime = -1f;
     private bool trialComplete;
@@ -39,29 +43,35 @@ public class SWMGameManager : MonoBehaviour
 
     private SWMTrialData currentData;
 
-    void Start() => StartDay(PlayerDataManager.Instance.Data.currentDay);
-
-    public void StartDay(int dayNumber)
+    void Start()
     {
         AudioManager.Instance.StopAll();
-        AudioManager.Instance.Play("MapAmbient"); 
-        AudioManager.Instance.Play("MusicLoop"); 
+        AudioManager.Instance.Play("MapAmbient");
+        AudioManager.Instance.Play("MusicLoop");
 
-        day = Mathf.Clamp(dayNumber, 1, 7);
-        dayCfg = config.GetDay(day);
+        StartLevel(PlayerDataManager.Instance.Data.swmLevel);
+    }
+
+    public void StartLevel(int levelNumber)
+    {
+        currentLevel = Mathf.Clamp(levelNumber, 1, ProgressionManager.MAX_LEVEL);
+        levelCfg = config.GetLevel(currentLevel);
 
         if (sessionData == null)
         {
-            Debug.LogError("SWMGameManager: SessionDataSO is NOT assigned.");
+            Debug.LogError("[SWM] SessionDataSO is NOT assigned.");
             return;
         }
 
-        trialIndex = 0;
+        levelStartTime = Time.time;
+        trialsCompleteInLevel = 0;
+        consecutiveFailsOnLevel = 0;
+        trialIndexInLevel = 0;
 
-        hud?.SetupDay(dayCfg.trials);
+        hud?.SetupDay(levelCfg.trials);
         hud?.SetTrialsDone(0);
 
-        poolSize = Mathf.Clamp(dayCfg.boxes, 3, 12);
+        poolSize = Mathf.Clamp(levelCfg.boxes, 3, 12);
 
         for (int i = 0; i < pool.Count; i++)
             if (pool[i]) Destroy(pool[i].gameObject);
@@ -78,17 +88,17 @@ public class SWMGameManager : MonoBehaviour
 
     public void StartNextTrial()
     {
-        if (trialIndex >= dayCfg.trials)
+        if (trialsCompleteInLevel >= levelCfg.trials)
         {
-            hud?.ShowDayComplete();
+            CompleteLevelAfterTrials();
             return;
         }
 
         trialComplete = false;
         firstClickTime = -1f;
 
-        numBoxes = Mathf.Clamp(dayCfg.boxes, 3, poolSize);
-        goalCollected = Mathf.Clamp(dayCfg.treasures, 1, numBoxes);
+        numBoxes = Mathf.Clamp(levelCfg.boxes, 3, poolSize);
+        goalCollected = Mathf.Clamp(levelCfg.treasures, 1, numBoxes);
 
         collectedFound = 0;
         betweenErrors = 0;
@@ -154,13 +164,11 @@ public class SWMGameManager : MonoBehaviour
         {
             betweenErrors++;
             RecordSelection(id, "between_error", tMs);
-          
         }
         else if (chest.State == SWMChest.ChestState.Treasure)
         {
             withinErrors++;
             RecordSelection(id, "within_error", tMs);
-            
         }
     }
 
@@ -185,55 +193,112 @@ public class SWMGameManager : MonoBehaviour
         currentData.completion_time_ms = completionMs;
         currentData.first_click_latency_ms = firstClickLatencyMs;
 
-        currentData = null;
-
         int wrongAttempts = betweenErrors + withinErrors;
         int span = goalCollected;
+
+        // Evaluate this trial for scoring
+        var trialResult = ProgressionManager.Instance.EvaluateTrial(
+            "SWM",
+            isCorrect: collectedFound == goalCollected,
+            wrongAttempts: wrongAttempts,
+            completionTimeMs: completionMs,
+            span: span,
+            consecutiveFails: consecutiveFailsOnLevel
+        );
 
         var targets = new List<int>(treasureIndices);
         targets.Sort();
 
-        sessionData.Add(new TrialRecord
+        // Record trial
+        RecordTrial("SWM", trialResult, collectedFound == goalCollected, wrongAttempts, completionMs, targets);
+
+        trialsCompleteInLevel++;
+        hud?.SetTrialsDone(trialsCompleteInLevel);
+
+        if (trialsCompleteInLevel >= levelCfg.trials)
         {
-            minigame_id = "SWM",
-            day = day,
-            trial_index = trialIndex + 1,
-            span = span,
-            target_sequence = targets,
-            wrong_attempts = wrongAttempts,
-            completion_time_ms = completionMs,
-            timestamp_iso = DateTime.UtcNow.ToString("o")
-        });
-
-        trialIndex++;
-        hud?.SetTrialsDone(trialIndex);
-
-        if (trialIndex >= dayCfg.trials)
-        {
-            var data = PlayerDataManager.Instance.Data;
-
-            if (!data.swmCompletedToday)
-            {
-                data.swmCompletedToday = true;
-                data.miniGamesCompletedToday += 1;
-                PlayerDataManager.Instance.Save();
-            }
-
-            hud?.ShowDayComplete();
+            CompleteLevelAfterTrials();
         }
         else
         {
             hud?.ShowTrialComplete();
         }
+
+        currentData = null;
+    }
+
+    void CompleteLevelAfterTrials()
+    {
+        // Compute aggregate level performance
+        int levelCompletionMs = Mathf.RoundToInt((Time.time - levelStartTime) * 1000f);
+        float avgSpan = levelCfg.treasures;
+
+        var levelResult = ProgressionManager.Instance.EvaluateTrial(
+            "SWM",
+            isCorrect: true,
+            wrongAttempts: consecutiveFailsOnLevel,
+            completionTimeMs: levelCompletionMs,
+            span: Mathf.RoundToInt(avgSpan),
+            consecutiveFails: 0
+        );
+
+        // Commit the level completion
+        var finalResult = ProgressionManager.Instance.CompleteLevel("SWM", levelResult);
+       
+        Debug.Log($"[SWM] Level {currentLevel} completed. Score: {finalResult.score:F1}, Stars: {finalResult.stars}. " +
+                  $"Cap: {finalResult.levelCapReached}");
+
+        hud?.ShowDayComplete();
+
+        if (finalResult.levelCapReached)
+        {
+            Debug.Log("[SWM] Session cap reached. No more levels available this session.");
+        }
+
+        if (finalResult.programCompletable)
+        {
+            Debug.Log("[SWM] Program is now completable! (All three minigames at gate level.)");
+        }
+    }
+
+    
+    void RecordTrial(string minigameId, ProgressionManager.LevelResult result, bool isCorrect, int wrongAttempts, int completionMs, List<int> targets)
+    {
+        sessionData.Add(new TrialRecord
+        {
+            minigame_id = minigameId,
+            day = currentLevel,           // Legacy: store level as day
+            level_number = currentLevel,
+            trial_index = trialIndexInLevel + 1,
+
+            span = goalCollected,
+            target_sequence = targets,
+            sequence_recalled = new List<int>(),  // SWM doesn't track this separately
+
+            is_correct = isCorrect,
+            wrong_attempts = wrongAttempts,
+            completion_time_ms = completionMs,
+
+            level_score = result.score,
+            stars = result.stars,
+            passed = result.passed,
+            strong_pass = result.strongPass,
+            assisted_pass = result.assistedPass,
+            consecutive_fails = consecutiveFailsOnLevel,
+
+            timestamp_iso = DateTime.UtcNow.ToString("o")
+        });
+
+        trialIndexInLevel++;
     }
 
     private SWMTrialData NewTrialDataSkeleton()
     {
         var data = new SWMTrialData
         {
-            trial_id = $"treasure_hunt_day{day}_trial{trialIndex + 1}",
-            day = day,
-            trial_index = trialIndex + 1,
+            trial_id = $"treasure_hunt_level{currentLevel}_trial{trialIndexInLevel + 1}",
+            day = currentLevel,
+            trial_index = trialIndexInLevel + 1,
             boxes = numBoxes,
             treasures = goalCollected,
         };

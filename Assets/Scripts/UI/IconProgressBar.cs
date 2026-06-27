@@ -18,6 +18,12 @@ public class IconProgressBar : MonoBehaviour
     // Call once (e.g. day start)
     public void Setup(int totalCount)
     {
+        if (container == null || iconPrefab == null)
+        {
+            Debug.LogError($"[IconProgressBar] Missing refs | container={(container ? container.name : "NULL")} | iconPrefab={(iconPrefab ? iconPrefab.name : "NULL")}");
+            return;
+        }
+
         total = totalCount;
 
         // Clear old

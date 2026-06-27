@@ -236,6 +236,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3953675357331876017}
   - component: {fileID: 527513609099342984}
+  - component: {fileID: 6198283900875568414}
   m_Layer: 5
   m_Name: Loading
   m_TagString: Untagged
@@ -250,7 +251,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5602079769398354740}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -281,6 +282,18 @@ MonoBehaviour:
   rightPanel: {fileID: 2641549443447496164}
   duration: 1.2
   moveDistance: 1200
+--- !u!114 &6198283900875568414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5602079769398354740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1fe9d363a36e294d99ef09917419f0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProgressionManager
 --- !u!1 &6962581263286488192
 GameObject:
   m_ObjectHideFlags: 0

@@ -966,7 +966,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 123.28235, y: -118.62}
+  m_AnchoredPosition: {x: 123.28235, y: -118.62012}
   m_SizeDelta: {x: 698.8654, y: 197.7094}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &389995455
@@ -1040,8 +1040,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b864c41b56e70de469f6c5f1afbbe8d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TimedPanel
-  root: {fileID: 0}
-  seconds: 1.5
+  root: {fileID: 389995453}
+  panel: {fileID: 389995454}
+  canvasGroup: {fileID: 0}
+  titleText: {fileID: 0}
+  messageText: {fileID: 0}
+  iconImage: {fileID: 0}
+  defaultTitle: 
+  defaultMessage: 
+  defaultIcon: {fileID: 0}
+  mode: 0
+  transitionDuration: 0.22
+  visibleSeconds: 1.5
+  minVisibleSeconds: 0.1
+  shownAnchoredPos: {x: 0, y: 0}
+  hiddenAnchoredPos: {x: 0, y: -220}
 --- !u!114 &389995459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3707,8 +3720,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: da0db2c0046b0f5418e743f4e3ff7b1c, type: 2}
-  m_sharedMaterial: {fileID: 6055675428639359453, guid: da0db2c0046b0f5418e743f4e3ff7b1c, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 41272e6181e5c0745a46dd4c5da1d0e0, type: 2}
+  m_sharedMaterial: {fileID: 6186187095023713641, guid: 41272e6181e5c0745a46dd4c5da1d0e0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

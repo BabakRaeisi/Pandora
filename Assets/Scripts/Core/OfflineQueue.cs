@@ -64,6 +64,7 @@ public class OfflineQueue : MonoBehaviour
             yield return new WaitForSeconds(5f);
 
             if (isSending || queue.Count == 0 || DataUploader.Instance == null ||
+                DataUploader.Instance.OfflineMode ||
                 Application.internetReachability == NetworkReachability.NotReachable)
                 continue;
 

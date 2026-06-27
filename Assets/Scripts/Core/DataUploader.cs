@@ -15,7 +15,12 @@ public class DataUploader : MonoBehaviour
     [SerializeField] private bool allowInsecureHttpInEditor = false;
     [SerializeField] private bool allowInvalidHttpsCertificateInEditor = true;
 
+    [Header("Offline Mode")]
+    [Tooltip("When enabled, all uploads are skipped and stored locally. OfflineQueue will not retry until this is turned off.")]
+    [SerializeField] private bool offlineMode = true;
+
     public int RequestTimeoutSeconds => requestTimeoutSeconds;
+    public bool OfflineMode => offlineMode;
     public long LastResponseCode { get; private set; }
     public string LastResponseBody { get; private set; }
     public string LastRequestJson { get; private set; }

@@ -44,6 +44,13 @@ public class PlayerDataManager : MonoBehaviour
         Save();
     }
 
+    public PlayerProfile GetProfile()
+    {
+        if (Data == null) return null;
+        if (!Data.profileCompleted) return null;
+        return Data.profile;
+    }
+
     /// <summary>
     /// Called after a successful POST /api/analytics/profile response.
     /// For existing players, restores progress from the latest session.
@@ -96,7 +103,29 @@ public class PlayerDataManager : MonoBehaviour
             swmCompletedToday            = latest.swmCompletedToday,
             programCompleted             = latest.programCompleted,
             profileCompleted             = true,
-            lastDayCompletionTime        = latest.lastDayCompletionTime
+            lastDayCompletionTime        = latest.lastDayCompletionTime,
+
+            constellationLevel           = latest.constellationLevel > 0 ? latest.constellationLevel : 1,
+            bridgeLevel                  = latest.bridgeLevel > 0 ? latest.bridgeLevel : 1,
+            swmLevel                     = latest.swmLevel > 0 ? latest.swmLevel : 1,
+
+            bridgeUnlocked               = latest.bridgeUnlocked,
+            swmUnlocked                  = latest.swmUnlocked,
+
+            constellationGateReached     = latest.constellationGateReached,
+            bridgeGateReached            = latest.bridgeGateReached,
+            swmGateReached               = latest.swmGateReached,
+            constellationPerfect         = latest.constellationPerfect,
+            bridgePerfect                = latest.bridgePerfect,
+            swmPerfect                   = latest.swmPerfect,
+
+            constellationLevelsPlayedThisSession = latest.constellationLevelsPlayedThisSession,
+            bridgeLevelsPlayedThisSession        = latest.bridgeLevelsPlayedThisSession,
+            swmLevelsPlayedThisSession           = latest.swmLevelsPlayedThisSession,
+
+            constellationLastLevelCompletionTime = latest.constellationLastLevelCompletionTime,
+            constellationLockUntilTime           = latest.constellationLockUntilTime,
+            constellationLockLevel               = latest.constellationLockLevel
         };
 
         Save();

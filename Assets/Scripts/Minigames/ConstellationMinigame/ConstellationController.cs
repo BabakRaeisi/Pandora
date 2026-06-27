@@ -21,14 +21,20 @@ public class ConstellationController : MonoBehaviour
     bool inputEnabled;
     int[] targetSequence;
 
-    public event Action<bool> OnTrialFinished; // bool success
+    public event Action<bool, List<int>> OnTrialFinished; // (success, playerSequence)
 
     void Awake()
     {
         CreateLinesContainer();
 
+        if (stars == null || stars.Length == 0)
+            return;
+
         foreach (var s in stars)
         {
+            if (s == null || s.button == null)
+                continue;
+
             s.button.onClick.RemoveAllListeners();
             s.button.onClick.AddListener(() => OnStarClicked(s));
         }
@@ -90,7 +96,9 @@ public class ConstellationController : MonoBehaviour
         {
             inputEnabled = false;
             bool success = CheckSuccess();
-            OnTrialFinished?.Invoke(success);
+            List<int> playerSeq = new();
+            foreach (var s in selected) playerSeq.Add(s.id);
+            OnTrialFinished?.Invoke(success, playerSeq);
         }
     }
 

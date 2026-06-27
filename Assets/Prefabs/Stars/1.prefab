@@ -67,7 +67,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 5649560835770926603, guid: dcd47a2ca0e08de49ae7e7d272eeb3d0, type: 3}
+  m_Sprite: {fileID: -1664867951399886046, guid: 595a3a485f058f44d915d681ac426304, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -136,5 +136,5 @@ MonoBehaviour:
   id: 3
   button: {fileID: 6943326222087833097}
   image: {fileID: 7240379959724376318}
-  dimSprite: {fileID: -4075574763027894432, guid: da41b82e3e5402a48a680136ad3b0e2b, type: 3}
-  glowSprite: {fileID: 5649560835770926603, guid: dcd47a2ca0e08de49ae7e7d272eeb3d0, type: 3}
+  dimSprite: {fileID: 1989393945625971854, guid: 9a0608294674a61478a5cdb4f8dab494, type: 3}
+  glowSprite: {fileID: -1664867951399886046, guid: 595a3a485f058f44d915d681ac426304, type: 3}

@@ -4,10 +4,10 @@ using UnityEngine;
 public class BridgeConfig : ScriptableObject
 {
     [System.Serializable]
-    public struct DayConfig
+    public struct LevelConfig
     {
-        public int day;               // 1..7
-        public int trials;            // per session day
+        public int levelNumber;       // 1..16
+        public int trials;            // per session level
 
         [Header("Sequence Difficulty")]
         public int minPieces;         // e.g. 3
@@ -20,34 +20,68 @@ public class BridgeConfig : ScriptableObject
         [Header("Pattern / Environment")]
         public BridgePattern pattern;
         public bool allowEnvironmentFX;  // week 4 style modifiers
+
+        [Header("User Messages (FA)")]
+        [TextArea] public string successMessageFa;
+        [TextArea] public string assistedPassInfoMessageFa;
+        [TextArea] public string levelUpInfoMessageFa;
     }
 
-    public DayConfig[] days = new DayConfig[]
+    public LevelConfig[] levels = new LevelConfig[]
     {
-        new DayConfig { day=1, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
-        new DayConfig { day=2, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
-        new DayConfig { day=3, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.GentleCurve,  allowEnvironmentFX=false },
-        new DayConfig { day=4, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.ZigZag,       allowEnvironmentFX=false },
-        new DayConfig { day=5, trials=7, minPieces=5, maxPieces=6, displayMs=900,  gapMs=300, pattern=BridgePattern.LShape,       allowEnvironmentFX=false },
-        new DayConfig { day=6, trials=7, minPieces=6, maxPieces=7, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
-        new DayConfig { day=7, trials=8, minPieces=7, maxPieces=8, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
+        new LevelConfig { levelNumber=1, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=2, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=3, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.GentleCurve,  allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=4, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.ZigZag,       allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=5, trials=7, minPieces=5, maxPieces=6, displayMs=900,  gapMs=300, pattern=BridgePattern.LShape,       allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=6, trials=7, minPieces=6, maxPieces=7, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
+        new LevelConfig { levelNumber=7, trials=8, minPieces=7, maxPieces=8, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
+        new LevelConfig { levelNumber=8, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=9, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=10, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.GentleCurve,  allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=11, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.ZigZag,       allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=12, trials=7, minPieces=5, maxPieces=6, displayMs=900,  gapMs=300, pattern=BridgePattern.LShape,       allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=13, trials=7, minPieces=6, maxPieces=7, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
+        new LevelConfig { levelNumber=14, trials=8, minPieces=7, maxPieces=8, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,     allowEnvironmentFX=true  },
+        new LevelConfig { levelNumber=15, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
+        new LevelConfig { levelNumber=16, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,     allowEnvironmentFX=false },
     };
 
-    public DayConfig GetDay(int day)
+    public LevelConfig GetLevel(int levelNumber)
     {
-        day = Mathf.Clamp(day, 1, 7);
-        for (int i = 0; i < days.Length; i++)
-            if (days[i].day == day) return days[i];
+        if (levels == null) return default;
+        levelNumber = Mathf.Clamp(levelNumber, 1, 16);
 
-        return days[day - 1];
+        for (int i = 0; i < levels.Length; i++)
+            if (levels[i].levelNumber == levelNumber) return levels[i];
+
+        return levels[levelNumber - 1];
     }
-}
 
-public enum BridgePattern
-{
-    Straight,
-    GentleCurve,
-    ZigZag,
-    LShape,
-    Elevated
+    public string GetSuccessMessage(LevelConfig level, int spanOrCount) =>
+        SafeFormat(level.successMessageFa, "مرحله را با موفقیت کامل کردی", spanOrCount);
+
+    public string GetAssistedPassInfo(LevelConfig level) =>
+        string.IsNullOrWhiteSpace(level.assistedPassInfoMessageFa)
+            ? "عبور کمکی فعال شد"
+            : level.assistedPassInfoMessageFa;
+
+    public string GetLevelUpInfo(LevelConfig level, int nextLevel) =>
+        SafeFormat(level.levelUpInfoMessageFa, "ارتقا به مرحله {0}", nextLevel);
+
+    private static string SafeFormat(string pattern, string fallback, params object[] args)
+    {
+        var p = string.IsNullOrWhiteSpace(pattern) ? fallback : pattern;
+        try { return string.Format(p, args); }
+        catch { return string.Format(fallback, args); }
+    }
+
+    public enum BridgePattern
+    {
+        Straight,
+        GentleCurve,
+        ZigZag,
+        LShape,
+        Elevated
+    }
 }
