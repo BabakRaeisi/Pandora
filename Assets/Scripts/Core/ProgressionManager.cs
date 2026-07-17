@@ -18,9 +18,6 @@ public class ProgressionManager : MonoBehaviour
     public static ProgressionManager Instance { get; private set; }
 
     // ── Tuning constants ──────────────────────────────────────────────────────
-    /// <summary>Level that must be completed to unlock the next minigame.</summary>
-    public const int GATE_LEVEL = 8;
-
     /// <summary>Total number of levels per minigame.</summary>
     public const int MAX_LEVEL = 16;
 
@@ -165,9 +162,6 @@ public class ProgressionManager : MonoBehaviour
         // ── Gate and perfect tiers ────────────────────────────────────────────
         // Level is stored as "next level to play", so newLevel == GATE_LEVEL + 1
         // means the player just finished level GATE_LEVEL.
-        if (newLevel > GATE_LEVEL)
-            SetGateReached(minigameId, data);
-
         if (newLevel > MAX_LEVEL)
             SetPerfect(minigameId, data);
 
@@ -296,13 +290,6 @@ public class ProgressionManager : MonoBehaviour
         if (id == "Constellation") return d.constellationLevelsPlayedThisSession;
         if (id == "Bridge")        return d.bridgeLevelsPlayedThisSession;
         return d.swmLevelsPlayedThisSession;
-    }
-
-    static void SetGateReached(string id, PlayerSaveData d)
-    {
-        if      (id == "Constellation") d.constellationGateReached = true;
-        else if (id == "Bridge")        d.bridgeGateReached        = true;
-        else                            d.swmGateReached           = true;
     }
 
     static void SetPerfect(string id, PlayerSaveData d)

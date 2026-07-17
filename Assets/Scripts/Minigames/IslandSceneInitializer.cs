@@ -2,39 +2,39 @@ using UnityEngine;
 
 public class IslandSceneInitializer : MonoBehaviour
 {
-    public IslandStageController stageController;
-    public MiniGameButtonsUI buttonsUI;
+    [SerializeField] private IslandStageController stageController;
 
     [Header("Ambient Audio")]
-    public string dayAmbientName;
-    public string nightAmbientName;
+    [SerializeField] private string dayAmbientName;
+    [SerializeField] private string nightAmbientName;
 
-    void Start()
+    private void Start()
     {
-        if (stageController != null)
-            stageController.ApplyStageImmediate();
-
-        if (buttonsUI != null)
-            buttonsUI.Refresh();
+        // This now updates island background, gem sprite,
+        // and enables/disables the simple minigame buttons.
+        stageController?.ApplyStageImmediate();
 
         SetupAmbient();
     }
 
-    void SetupAmbient()
+    private void SetupAmbient()
     {
+        if (PlayerDataManager.Instance == null ||
+            PlayerDataManager.Instance.Data == null ||
+            AudioManager.Instance == null)
+        {
+            return;
+        }
+
         int completed = PlayerDataManager.Instance.Data.miniGamesCompletedToday;
 
         AudioManager.Instance.StopAmbient();
 
         if (completed >= 3)
-        {
             AudioManager.Instance.Play(dayAmbientName);
-            AudioManager.Instance.Play("MusicLoop");
-        }
         else
-        {
             AudioManager.Instance.Play(nightAmbientName);
-            AudioManager.Instance.Play("MusicLoop");
-        }
+
+        AudioManager.Instance.Play("MusicLoop");
     }
 }

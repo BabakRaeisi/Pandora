@@ -10,8 +10,17 @@ public class PlayerDataManager : MonoBehaviour
     [ContextMenu("Clear")]
     public void ClearSave()
     {
-        string path = System.IO.Path.Combine(Application.persistentDataPath, "player_save.json");
-        if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+        string path = System.IO.Path.Combine(
+            Application.persistentDataPath,
+            "player_save.json"
+        );
+
+        if (System.IO.File.Exists(path))
+            System.IO.File.Delete(path);
+
+        PlayerPrefs.DeleteAll();
+        PlayerPrefs.Save();
+
         Data = new PlayerSaveData();
     }
 
@@ -46,86 +55,103 @@ public class PlayerDataManager : MonoBehaviour
 
     public PlayerProfile GetProfile()
     {
-        if (Data == null) return null;
-        if (!Data.profileCompleted) return null;
+        if (Data == null || !Data.profileCompleted)
+            return null;
+
         return Data.profile;
     }
 
-    /// <summary>
-    /// Called after a successful POST /api/analytics/profile response.
-    /// For existing players, restores progress from the latest session.
-    /// For new players, initialises a fresh save.
-    /// Phone number is always the identity key — if the returned phone number
-    /// differs from any cached save, the local save is replaced.
-    /// </summary>
     public void ApplyServerResponse(ProfileRestoreResponse response)
     {
-        if (response == null) return;
+        if (response == null)
+            return;
 
         PlayerFullData serverData = response.playerData;
-        if (serverData == null) return;
 
-        // Build a PlayerProfile from the server's returned ProfileDetail.
+        if (serverData == null)
+            return;
+
         ProfileDetail pd = serverData.profile;
+
         var profile = new PlayerProfile
         {
             phoneNumber = pd?.phoneNumber ?? Data?.profile?.phoneNumber ?? "",
-            playerName  = pd?.playerName  ?? "",
-            age         = pd?.age         ?? 0,
+            playerName = pd?.playerName ?? "",
+            age = pd?.age ?? 0,
             avatarIndex = pd?.avatarIndex ?? 0,
-            gender      = pd?.gender      ?? ""
+            gender = pd?.gender ?? ""
         };
 
-        if (!response.isExistingPlayer || serverData.sessions == null || serverData.sessions.Count == 0)
+        if (!response.isExistingPlayer ||
+            serverData.sessions == null ||
+            serverData.sessions.Count == 0)
         {
-            // Brand-new player: start fresh.
             Data = new PlayerSaveData
             {
-                profile          = profile,
+                profile = profile,
                 profileCompleted = true
             };
+
             Save();
             return;
         }
 
-        // Existing player: restore from the latest session.
         SessionDetail latest = FindLatestSession(serverData.sessions);
         int restoredDay = ComputeRestoredCurrentDay(latest);
 
         Data = new PlayerSaveData
         {
-            profile                      = profile,
-            currentDay                   = restoredDay,
-            miniGamesCompletedToday      = latest.miniGamesCompletedToday,
+            profile = profile,
+            currentDay = restoredDay,
+            miniGamesCompletedToday = latest.miniGamesCompletedToday,
             trialsCompletedInCurrentGame = latest.trialsCompletedInCurrentGame,
-            bridgeCompletedToday         = latest.bridgeCompletedToday,
-            constellationCompletedToday  = latest.constellationCompletedToday,
-            swmCompletedToday            = latest.swmCompletedToday,
-            programCompleted             = latest.programCompleted,
-            profileCompleted             = true,
-            lastDayCompletionTime        = latest.lastDayCompletionTime,
+            bridgeCompletedToday = latest.bridgeCompletedToday,
+            constellationCompletedToday = latest.constellationCompletedToday,
+            swmCompletedToday = latest.swmCompletedToday,
+            programCompleted = latest.programCompleted,
+            profileCompleted = true,
+            lastDayCompletionTime = latest.lastDayCompletionTime,
 
-            constellationLevel           = latest.constellationLevel > 0 ? latest.constellationLevel : 1,
-            bridgeLevel                  = latest.bridgeLevel > 0 ? latest.bridgeLevel : 1,
-            swmLevel                     = latest.swmLevel > 0 ? latest.swmLevel : 1,
+            constellationLevel = latest.constellationLevel > 0
+                ? latest.constellationLevel
+                : 1,
 
-            bridgeUnlocked               = latest.bridgeUnlocked,
-            swmUnlocked                  = latest.swmUnlocked,
+            bridgeLevel = latest.bridgeLevel > 0
+                ? latest.bridgeLevel
+                : 1,
 
-            constellationGateReached     = latest.constellationGateReached,
-            bridgeGateReached            = latest.bridgeGateReached,
-            swmGateReached               = latest.swmGateReached,
-            constellationPerfect         = latest.constellationPerfect,
-            bridgePerfect                = latest.bridgePerfect,
-            swmPerfect                   = latest.swmPerfect,
+            swmLevel = latest.swmLevel > 0
+                ? latest.swmLevel
+                : 1,
 
-            constellationLevelsPlayedThisSession = latest.constellationLevelsPlayedThisSession,
-            bridgeLevelsPlayedThisSession        = latest.bridgeLevelsPlayedThisSession,
-            swmLevelsPlayedThisSession           = latest.swmLevelsPlayedThisSession,
+            bridgeUnlocked = latest.bridgeUnlocked,
+            swmUnlocked = latest.swmUnlocked,
 
-            constellationLastLevelCompletionTime = latest.constellationLastLevelCompletionTime,
-            constellationLockUntilTime           = latest.constellationLockUntilTime,
-            constellationLockLevel               = latest.constellationLockLevel
+            constellationGateReached = latest.constellationGateReached,
+            bridgeGateReached = latest.bridgeGateReached,
+            swmGateReached = latest.swmGateReached,
+
+            constellationPerfect = latest.constellationPerfect,
+            bridgePerfect = latest.bridgePerfect,
+            swmPerfect = latest.swmPerfect,
+
+            constellationLevelsPlayedThisSession =
+                latest.constellationLevelsPlayedThisSession,
+
+            bridgeLevelsPlayedThisSession =
+                latest.bridgeLevelsPlayedThisSession,
+
+            swmLevelsPlayedThisSession =
+                latest.swmLevelsPlayedThisSession,
+
+            constellationLastLevelCompletionTime =
+                latest.constellationLastLevelCompletionTime,
+
+            constellationLockUntilTime =
+                latest.constellationLockUntilTime,
+
+            constellationLockLevel =
+                latest.constellationLockLevel
         };
 
         Save();
@@ -139,25 +165,26 @@ public class PlayerDataManager : MonoBehaviour
         if (latest.programCompleted)
             return 7;
 
-        // Session payloads are uploaded before local day increment.
-        // If the day was completed (3 mini-games), restore into the next day.
         bool completedDay = latest.miniGamesCompletedToday >= 3;
         int day = completedDay ? latest.day + 1 : latest.day;
 
         return Mathf.Clamp(day, 1, 7);
     }
 
-    private static SessionDetail FindLatestSession(List<SessionDetail> sessions)
+    private static SessionDetail FindLatestSession(
+        List<SessionDetail> sessions)
     {
         SessionDetail latest = sessions[0];
+
         for (int i = 1; i < sessions.Count; i++)
         {
             if (sessions[i].day > latest.day)
                 latest = sessions[i];
-            else if (sessions[i].day == latest.day
-                     && sessions[i].sessionId > latest.sessionId)
+            else if (sessions[i].day == latest.day &&
+                     sessions[i].sessionId > latest.sessionId)
                 latest = sessions[i];
         }
+
         return latest;
     }
 }

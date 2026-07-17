@@ -341,7 +341,7 @@ MonoBehaviour:
   warningTitleColor: {r: 1, g: 0.4, b: 0.3, a: 1}
   unlockTitleColor: {r: 0.9, g: 0.6, b: 1, a: 1}
   hiddenPosition: {x: 0, y: -200}
-  visiblePosition: {x: 0, y: -60}
+  visiblePosition: {x: 0, y: 320}
   slideInDuration: 0.35
   holdDuration: 2.5
   slideOutDuration: 0.28

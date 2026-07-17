@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using UnityEngine;
 using TMPro;
-using UnityEngine.SceneManagement;
+using UnityEngine;
 
 public class ConstellationGameManager : MonoBehaviour
 {
@@ -14,12 +12,8 @@ public class ConstellationGameManager : MonoBehaviour
     [SerializeField] private ConstellationConfigSO config;
     [SerializeField] private ConstellationTimingProfile timingProfile;
     [SerializeField] private FeedbackMessanger feedbackMessanger;
-
     [SerializeField] private IntroductionManager introductionManager;
     [SerializeField] private ConstellationTutorial constellationTutorial;
-
-    [Header("Onboarding")]
-    [SerializeField] private bool forceShowTutorialOnStart = false;
 
     [Header("Session Data")]
     [SerializeField] private SessionDataSO sessionData;
@@ -29,22 +23,26 @@ public class ConstellationGameManager : MonoBehaviour
 
     [Header("Flow")]
     [SerializeField, Min(0f)] private float autoNextTrialDelay = 0.9f;
+
+    private const string SelectedLevelKey = "ConstellationSelectedLevel";
+
     private Coroutine autoNextTrialRoutine;
 
-    // public event Action TrialStarted;
-    // public event Action TrialFailed;
-    // public event Action TrialSucceeded;
-
-    // ── Current level state ───────────────────────────────────────────────────
     private int currentLevel;
+    private int levelStartedAt;
     private ConstellationConfigSO.LevelConfig levelCfg;
 
-    // ── Trial state ───────────────────────────────────────────────────────────
     private int trialIndexInLevel;
     private int trialsCompleteInLevel;
     private int consecutiveFailsOnLevel;
     private int wrongAttempts;
+
     private bool busy;
+    private bool gameplayBootstrapped;
+    private bool bootstrapRequested;
+    private bool introStepCompleted;
+    private bool tutorialStepCompleted;
+    private bool tutorialOpened;
 
     private int[] currentSequence;
     private List<int> playerSequence;
@@ -53,47 +51,86 @@ public class ConstellationGameManager : MonoBehaviour
     private float levelStartTime;
     private float trialStartTime;
 
-    private float CurrentStarOnSeconds => timingProfile ? timingProfile.StarDisplaySeconds : 1.0f;
-    private float CurrentGapSeconds => timingProfile ? timingProfile.GapSeconds : 0.25f;
+    private float CurrentStarOnSeconds =>
+        timingProfile ? timingProfile.StarDisplaySeconds : 1f;
 
-    private bool gameplayBootstrapped;
-    private string tutorialVisitKey;
+    private float CurrentGapSeconds =>
+        timingProfile ? timingProfile.GapSeconds : 0.25f;
 
-    // ADD:
-    private bool bootstrapRequested;
-    private bool introStepCompleted;
-    private bool tutorialStepCompleted;
-    private bool tutorialOpened;
-
-    // REMOVE this if present:
-    // private Coroutine tutorialFailSafeRoutine;
-
-    void Awake()
+    private void Awake()
     {
-        tutorialVisitKey = $"ConstellationTutorialShown_{SceneManager.GetActiveScene().name}";
+        bool isStartingLevelOne = GetSelectedStartingLevel() == 1;
 
-        // Intro must complete first (unless intro manager does not exist).
-        introStepCompleted = (introductionManager == null);
-
-        // Tutorial required only on first visit (unless tutorial object missing).
-        tutorialStepCompleted = (constellationTutorial == null) || !NeedsTutorialFirstVisit();
-        tutorialOpened = false;
-
+        // Introduction is allowed ONLY when level 1 was selected.
         if (introductionManager != null)
+        {
+            introductionManager.SetAllowedForCurrentLevel(isStartingLevelOne);
+            introductionManager.IntroductionCompleted -= HandleIntroductionCompleted;
             introductionManager.IntroductionCompleted += HandleIntroductionCompleted;
 
-        if (constellationTutorial != null)
+            if (isStartingLevelOne)
+            {
+                introStepCompleted = false;
+            }
+            else
+            {
+                introStepCompleted = true;
+                introductionManager.enabled = false;
+            }
+        }
+        else
+        {
+            introStepCompleted = true;
+        }
+
+        // Tutorial is required ONLY for level 1.
+        if (isStartingLevelOne && constellationTutorial != null)
+        {
+            tutorialStepCompleted = false;
+            tutorialOpened = false;
+
+            constellationTutorial.TutorialCompleted -= HandleTutorialCompleted;
             constellationTutorial.TutorialCompleted += HandleTutorialCompleted;
+
+            // Tutorial cannot start before introduction completion.
+            constellationTutorial.enabled = false;
+        }
+        else
+        {
+            tutorialStepCompleted = true;
+            tutorialOpened = false;
+
+            if (constellationTutorial != null)
+                constellationTutorial.enabled = false;
+        }
+
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(false);
     }
 
-    void Start()
+    private void Start()
     {
-        controller.OnTrialFinished += HandleTrialFinished;
+        if (controller != null)
+            controller.OnTrialFinished += HandleTrialFinished;
 
         AudioManager.Instance.StopAll();
         AudioManager.Instance.Play("SpaceAmbientSound");
 
         RequestBootstrapGameFlow();
+    }
+
+    private int GetSelectedStartingLevel()
+    {
+        var data = PlayerDataManager.Instance.Data;
+
+        int unlockedLevel = Mathf.Clamp(
+            data.constellationLevel,
+            1,
+            ProgressionManager.MAX_LEVEL
+        );
+
+        int requestedLevel = PlayerPrefs.GetInt(SelectedLevelKey, unlockedLevel);
+        return Mathf.Clamp(requestedLevel, 1, unlockedLevel);
     }
 
     private void RequestBootstrapGameFlow()
@@ -104,118 +141,164 @@ public class ConstellationGameManager : MonoBehaviour
 
     private void EvaluateOnboardingGate()
     {
-        if (!bootstrapRequested || gameplayBootstrapped) return;
+        if (!bootstrapRequested || gameplayBootstrapped)
+            return;
 
-        // Step 1: Intro must finish first.
-        if (!introStepCompleted) return;
+        // Level 1 waits for the intro's final slide.
+        if (!introStepCompleted)
+            return;
 
-        // Step 2: Then tutorial (first visit).
+        // Level 1 then waits for tutorial completion.
         if (!tutorialStepCompleted)
-        {
-            if (!tutorialOpened)
-            {
-                tutorialOpened = true;
+            return;
 
-                if (constellationTutorial != null)
-                {
-                    constellationTutorial.OpenTutorial();
-                    return;
-                }
-
-                // Fallback if tutorial ref is missing
-                tutorialStepCompleted = true;
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        // Step 3: start gameplay countdown
+        // Level 2+ arrives here immediately.
         StartGameplayIfNeeded();
     }
 
     private void HandleIntroductionCompleted()
     {
-        if (gameplayBootstrapped) return;
+        if (gameplayBootstrapped || introStepCompleted)
+            return;
+
         introStepCompleted = true;
+
+        // Level 1: enable and open the tutorial only after intro completion.
+        if (!tutorialStepCompleted && constellationTutorial != null)
+        {
+            constellationTutorial.enabled = true;
+            StartCoroutine(OpenTutorialAfterIntroduction());
+            return;
+        }
+
         EvaluateOnboardingGate();
+    }
+
+    private IEnumerator OpenTutorialAfterIntroduction()
+    {
+        // Allow the tutorial's OnEnable / Start code to initialize first.
+        yield return null;
+
+        if (gameplayBootstrapped ||
+            tutorialStepCompleted ||
+            tutorialOpened ||
+            constellationTutorial == null)
+        {
+            yield break;
+        }
+
+        tutorialOpened = true;
+        constellationTutorial.OpenTutorial();
     }
 
     private void HandleTutorialCompleted()
     {
-        if (gameplayBootstrapped) return;
+        if (gameplayBootstrapped || tutorialStepCompleted)
+            return;
 
-        if (!tutorialStepCompleted)
-        {
-            MarkTutorialVisited();
-            tutorialStepCompleted = true;
-        }
-
+        tutorialStepCompleted = true;
         tutorialOpened = false;
+
         EvaluateOnboardingGate();
     }
 
+    // Optional Unity Button event target for a tutorial completion button.
     public void OnTutorialCompleted()
     {
         HandleTutorialCompleted();
     }
 
-    private bool NeedsTutorialFirstVisit()
+    public void ShowHowToPlay()
     {
-        if (forceShowTutorialOnStart) return true;
-        return PlayerPrefs.GetInt(tutorialVisitKey, 0) == 0;
+        if (constellationTutorial == null || tutorialOpened)
+            return;
+
+        tutorialOpened = true;
+
+        // It was disabled for level 2+, so it must be enabled for manual viewing.
+        constellationTutorial.enabled = true;
+        StartCoroutine(OpenTutorialManually());
     }
 
-    private void MarkTutorialVisited()
+    private IEnumerator OpenTutorialManually()
     {
-        PlayerPrefs.SetInt(tutorialVisitKey, 1);
-        PlayerPrefs.Save();
+        yield return null;
+
+        if (constellationTutorial == null)
+            yield break;
+
+        constellationTutorial.OpenTutorial();
     }
 
     private void StartGameplayIfNeeded()
     {
-        if (gameplayBootstrapped) return;
+        if (gameplayBootstrapped)
+            return;
+
         gameplayBootstrapped = true;
         StartCoroutine(BeginGameAfterCountdown());
     }
 
-    IEnumerator BeginGameAfterCountdown()
+    private IEnumerator BeginGameAfterCountdown()
     {
         var data = PlayerDataManager.Instance.Data;
-        int startLevel = Mathf.Clamp(data.constellationLevel, 1, ProgressionManager.MAX_LEVEL);
 
-      
+        int unlockedLevel = Mathf.Clamp(
+            data.constellationLevel,
+            1,
+            ProgressionManager.MAX_LEVEL
+        );
+
+        int requestedLevel = PlayerPrefs.GetInt(SelectedLevelKey, unlockedLevel);
+        int startLevel = Mathf.Clamp(requestedLevel, 1, unlockedLevel);
+
+        PlayerPrefs.DeleteKey(SelectedLevelKey);
 
         if (countdownText != null)
         {
             countdownText.gameObject.SetActive(true);
+
             countdownText.text = "3";
             yield return new WaitForSeconds(1f);
+
             countdownText.text = "2";
             yield return new WaitForSeconds(1f);
+
             countdownText.text = "1";
             yield return new WaitForSeconds(1f);
+
             countdownText.gameObject.SetActive(false);
         }
 
         StartLevel(startLevel);
     }
 
-    private int levelStartedAt; // strict: allow only +1 unlock from played level
-
     public void StartLevel(int levelNumber)
     {
+        if (config == null)
+        {
+            Debug.LogError("[ConstellationGameManager] Config is NULL.");
+            return;
+        }
+
         currentLevel = Mathf.Clamp(levelNumber, 1, ProgressionManager.MAX_LEVEL);
         levelCfg = config.GetLevel(currentLevel);
-        if (levelCfg == null) return;
+
+        if (levelCfg == null)
+        {
+            Debug.LogError(
+                $"[ConstellationGameManager] Missing LevelConfig for level {currentLevel}."
+            );
+            return;
+        }
 
         levelStartedAt = currentLevel;
-
         levelStartTime = Time.time;
         trialIndexInLevel = 0;
         trialsCompleteInLevel = 0;
         consecutiveFailsOnLevel = 0;
+        wrongAttempts = 0;
+        busy = false;
 
         hud.SetupDay(levelCfg.trials);
         hud.SetTrialsDone(0);
@@ -223,22 +306,28 @@ public class ConstellationGameManager : MonoBehaviour
         StartNewTrial();
     }
 
-    void StartNewTrial()
+    private void StartNewTrial()
     {
         wrongAttempts = 0;
         playerSequence = new List<int>();
         trialStartTime = Time.time;
 
-        int span = UnityEngine.Random.Range(levelCfg.spanMin, levelCfg.spanMax + 1);
+        int span = UnityEngine.Random.Range(
+            levelCfg.spanMin,
+            levelCfg.spanMax + 1
+        );
+
         currentSequence = GenerateUniqueSequence(span);
         visibleSet = new HashSet<int>(currentSequence);
-
-        Debug.Log($"[ConstellationGM] StartNewTrial | trialIdx={trialIndexInLevel + 1}, done={trialsCompleteInLevel}/{levelCfg.trials}, span={span}");
 
         hud.SetupTrial();
         controller.ResetAll();
         controller.SetVisibleStars(visibleSet);
-        controller.BeginTrial(currentSequence, CurrentStarOnSeconds, CurrentGapSeconds);
+        controller.BeginTrial(
+            currentSequence,
+            CurrentStarOnSeconds,
+            CurrentGapSeconds
+        );
     }
 
     public void ReplaySameTrial()
@@ -246,166 +335,212 @@ public class ConstellationGameManager : MonoBehaviour
         hud.SetupTrial();
         controller.ResetAll();
         controller.SetVisibleStars(visibleSet);
-        controller.BeginTrial(currentSequence, CurrentStarOnSeconds, CurrentGapSeconds);
+        controller.BeginTrial(
+            currentSequence,
+            CurrentStarOnSeconds,
+            CurrentGapSeconds
+        );
     }
 
-    void HandleTrialFinished(bool success, List<int> playerSeq)
+    private void HandleTrialFinished(bool success, List<int> playerSeq)
     {
-        if (busy) return;
+        if (busy)
+            return;
+
         busy = true;
 
-        int completionMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
+        int completionMs = Mathf.RoundToInt(
+            (Time.time - trialStartTime) * 1000f
+        );
+
         playerSequence = playerSeq ?? new List<int>();
 
         if (success)
         {
-            AudioManager.Instance.Play("SuccessDing2");
+            HandleCorrectTrial(completionMs);
+            return;
+        }
 
-            trialsCompleteInLevel++;
-            consecutiveFailsOnLevel = 0;
-            hud.SetTrialsDone(trialsCompleteInLevel);
+        HandleWrongTrial(completionMs);
+    }
 
-            var trialResult = ProgressionManager.Instance.EvaluateTrial(
+    private void HandleCorrectTrial(int completionMs)
+    {
+        AudioManager.Instance.Play("SuccessDing2");
+
+        trialsCompleteInLevel++;
+        consecutiveFailsOnLevel = 0;
+        hud.SetTrialsDone(trialsCompleteInLevel);
+
+        var trialResult = ProgressionManager.Instance.EvaluateTrial(
+            "Constellation",
+            isCorrect: true,
+            wrongAttempts: wrongAttempts,
+            completionTimeMs: completionMs,
+            span: currentSequence.Length,
+            consecutiveFails: 0
+        );
+
+        RecordTrial("Constellation", trialResult, true, wrongAttempts, completionMs);
+
+        if (trialsCompleteInLevel >= levelCfg.trials)
+        {
+            CompleteLevelAfterTrials(false);
+            busy = false;
+            return;
+        }
+
+        feedbackMessanger?.ShowSuccess(
+            config.GetSuccessTitle(levelCfg),
+            config.GetTrialSuccessMessage(
+                levelCfg,
+                trialsCompleteInLevel,
+                currentSequence.Length
+            )
+        );
+
+        hud.ShowTrialComplete();
+        QueueAutoNextTrial();
+    }
+
+    private void HandleWrongTrial(int completionMs)
+    {
+        AudioManager.Instance.Play("StarError");
+
+        wrongAttempts++;
+        consecutiveFailsOnLevel++;
+
+        if (consecutiveFailsOnLevel >= ProgressionManager.ASSISTED_PASS_FAIL_LIMIT)
+        {
+            var assistResult = ProgressionManager.Instance.EvaluateTrial(
                 "Constellation",
-                isCorrect: true,
+                isCorrect: false,
                 wrongAttempts: wrongAttempts,
                 completionTimeMs: completionMs,
                 span: currentSequence.Length,
-                consecutiveFails: 0
+                consecutiveFails: consecutiveFailsOnLevel
             );
 
-            RecordTrial("Constellation", trialResult, true, wrongAttempts, completionMs);
-
-            if (trialsCompleteInLevel >= levelCfg.trials)
-            {
-                // final trial: show level success only inside CompleteLevelAfterTrials
-                CompleteLevelAfterTrials(false);
-                busy = false;
-                return;
-            }
-
-            // non-final trial: show per-trial success message
-            feedbackMessanger?.ShowSuccess(
-                config.GetSuccessTitle(levelCfg),
-                config.GetTrialSuccessMessage(levelCfg, trialsCompleteInLevel, currentSequence.Length)
+            RecordTrial(
+                "Constellation",
+                assistResult,
+                false,
+                wrongAttempts,
+                completionMs
             );
 
-            hud.ShowTrialComplete();
-            QueueAutoNextTrial();
+            trialsCompleteInLevel = levelCfg.trials;
+            hud.SetTrialsDone(trialsCompleteInLevel);
+            consecutiveFailsOnLevel = 0;
+
+            CompleteLevelAfterTrials(true);
+            busy = false;
             return;
         }
-        else
-        {
-            AudioManager.Instance.Play("StarError");
-            wrongAttempts++;
-            consecutiveFailsOnLevel++;
 
-            if (consecutiveFailsOnLevel >= ProgressionManager.ASSISTED_PASS_FAIL_LIMIT)
-            {
-                var assistResult = ProgressionManager.Instance.EvaluateTrial(
-                    "Constellation",
-                    isCorrect: false,
-                    wrongAttempts: wrongAttempts,
-                    completionTimeMs: completionMs,
-                    span: currentSequence.Length,
-                    consecutiveFails: consecutiveFailsOnLevel
-                );
+        var wrong = config.GetRandomWrongPattern(levelCfg);
+        feedbackMessanger?.ShowWrongPattern(wrong.title, wrong.message);
 
-                RecordTrial("Constellation", assistResult, false, wrongAttempts, completionMs);
-
-                // remove old assisted toast here (panel shown at level completion)
-                // var assistedToast = config.GetAssistedPassToast(levelCfg, currentLevel);
-                // feedbackMessanger?.ShowInfo(assistedToast.title, assistedToast.message);
-
-                trialsCompleteInLevel = levelCfg.trials;
-                hud.SetTrialsDone(trialsCompleteInLevel);
-                consecutiveFailsOnLevel = 0;
-
-                CompleteLevelAfterTrials(true);
-                busy = false;
-                return;
-            }
-            else
-            {
-                feedbackMessanger?.ShowWrongPattern();
-                StartCoroutine(FailRoutine());
-            }
-        }
+        StartCoroutine(FailRoutine());
     }
 
-    IEnumerator FailRoutine()
+    private IEnumerator FailRoutine()
     {
         yield return new WaitForSeconds(0.3f);
+
         ReplaySameTrial();
         busy = false;
     }
 
     private void QueueAutoNextTrial()
     {
-        if (autoNextTrialRoutine != null) StopCoroutine(autoNextTrialRoutine);
+        if (autoNextTrialRoutine != null)
+            StopCoroutine(autoNextTrialRoutine);
+
         autoNextTrialRoutine = StartCoroutine(AutoNextTrialRoutine());
     }
 
     private IEnumerator AutoNextTrialRoutine()
     {
-        Debug.Log($"[ConstellationGM] AutoNextTrial in {autoNextTrialDelay:0.00}s");
         yield return new WaitForSeconds(autoNextTrialDelay);
+
         hud.HideTrialComplete();
         busy = false;
+
         StartNewTrial();
     }
 
-    // REMOVE button handler entirely if not used:
-    // public void OnNextTrialButton() { ... }
-
-    // ── Level completion and progression ──────────────────────────────────────
-
-    void CompleteLevelAfterTrials(bool assistedLevelCompletion)
+    private void CompleteLevelAfterTrials(bool assistedLevelCompletion)
     {
-        int levelCompletionMs = Mathf.RoundToInt((Time.time - levelStartTime) * 1000f);
-        float avgSpan = (levelCfg.spanMin + levelCfg.spanMax) * 0.5f;
+        int levelCompletionMs = Mathf.RoundToInt(
+            (Time.time - levelStartTime) * 1000f
+        );
+
+        float averageSpan = (levelCfg.spanMin + levelCfg.spanMax) * 0.5f;
 
         var levelResult = ProgressionManager.Instance.EvaluateTrial(
             "Constellation",
             isCorrect: !assistedLevelCompletion,
-            wrongAttempts: assistedLevelCompletion ? ProgressionManager.ASSISTED_PASS_FAIL_LIMIT : 0,
+            wrongAttempts: assistedLevelCompletion
+                ? ProgressionManager.ASSISTED_PASS_FAIL_LIMIT
+                : 0,
             completionTimeMs: levelCompletionMs,
-            span: Mathf.RoundToInt(avgSpan),
-            consecutiveFails: assistedLevelCompletion ? ProgressionManager.ASSISTED_PASS_FAIL_LIMIT : 0
+            span: Mathf.RoundToInt(averageSpan),
+            consecutiveFails: assistedLevelCompletion
+                ? ProgressionManager.ASSISTED_PASS_FAIL_LIMIT
+                : 0
         );
 
-        var finalResult = ProgressionManager.Instance.CompleteLevel("Constellation", levelResult);
-
-        // no performance-based boost: exactly next level max from this played level
         var data = PlayerDataManager.Instance.Data;
-        int strictNext = Mathf.Min(levelStartedAt + 1, ProgressionManager.MAX_LEVEL);
-        data.constellationLevel = strictNext;
-        PlayerDataManager.Instance.Save();
 
-        ScheduleNextLevelLock();
+        bool completedCurrentUnlockedLevel =
+            levelStartedAt == data.constellationLevel;
 
-        // Show dedicated end panel (NOT toast)
-        bool showKey = (currentLevel == 8); // special unlock level
-        if (assistedLevelCompletion)
+        if (completedCurrentUnlockedLevel)
         {
-            var assistedToast = config.GetAssistedPassToast(levelCfg, currentLevel);
-            feedbackMessanger?.ShowOutcomePanel(
-                assistedToast.title,
-                assistedToast.message,
-                assisted: true,
-                showKey: showKey
+            ProgressionManager.Instance.CompleteLevel(
+                "Constellation",
+                levelResult
             );
-        }
-        else
-        {
-            var successToast = config.GetLevelSuccessToast(levelCfg, currentLevel);
-            feedbackMessanger?.ShowOutcomePanel(
-                successToast.title,
-                successToast.message,
-                assisted: false,
-                showKey: showKey
+
+            int nextLevel = Mathf.Min(
+                levelStartedAt + 1,
+                ProgressionManager.MAX_LEVEL
             );
+
+            data.constellationLevel = Mathf.Max(
+                data.constellationLevel,
+                nextLevel
+            );
+
+            // Passing Constellation's gateway awards gem 1
+            // and enables the Bridge map button on the island.
+            if (!assistedLevelCompletion &&
+                config.IsGatewayLevel(levelCfg))
+            {
+                data.constellationGateReached = true;
+                data.bridgeUnlocked = true;
+            }
+
+            PlayerDataManager.Instance.Save();
+            ScheduleNextLevelLock();
         }
+
+        bool showKey =
+            completedCurrentUnlockedLevel &&
+            !assistedLevelCompletion &&
+            config.IsGatewayLevel(levelCfg);
+
+        string message = assistedLevelCompletion
+            ? config.GetRandomAssistedPassMessage()
+            : config.GetFinalSuccessMessage(levelCfg);
+
+        feedbackMessanger?.ShowOutcomePanel(
+            title: string.Empty,
+            message: message,
+            assisted: assistedLevelCompletion,
+            showKey: showKey
+        );
 
         hud.ShowLevelComplete(
             completedLevel: currentLevel,
@@ -415,14 +550,14 @@ public class ConstellationGameManager : MonoBehaviour
         busy = false;
     }
 
-    void ScheduleNextLevelLock()
+    private void ScheduleNextLevelLock()
     {
         var data = PlayerDataManager.Instance.Data;
         int nextLevel = data.constellationLevel;
 
-        data.constellationLastLevelCompletionTime = DateTime.UtcNow.ToString("o");
+        data.constellationLastLevelCompletionTime =
+            DateTime.UtcNow.ToString("o");
 
-        // Lock can apply to any playable next level based on config.
         if (nextLevel > ProgressionManager.MAX_LEVEL)
         {
             ClearConstellationLock();
@@ -430,7 +565,10 @@ public class ConstellationGameManager : MonoBehaviour
         }
 
         var nextCfg = config.GetLevel(nextLevel);
-        float lockHours = nextCfg != null ? Mathf.Max(0f, nextCfg.lockDurationHours) : 0f;
+
+        float lockHours = nextCfg != null
+            ? Mathf.Max(0f, nextCfg.lockDurationHours)
+            : 0f;
 
         if (lockHours <= 0f)
         {
@@ -438,27 +576,35 @@ public class ConstellationGameManager : MonoBehaviour
             return;
         }
 
-        DateTime lockUntil = DateTime.UtcNow.AddHours(lockHours);
         data.constellationLockLevel = nextLevel;
-        data.constellationLockUntilTime = lockUntil.ToString("o");
+        data.constellationLockUntilTime =
+            DateTime.UtcNow.AddHours(lockHours).ToString("o");
+
         PlayerDataManager.Instance.Save();
     }
 
-    void ClearConstellationLock()
+    private void ClearConstellationLock()
     {
         var data = PlayerDataManager.Instance.Data;
+
         data.constellationLockLevel = 0;
         data.constellationLockUntilTime = "";
+
         PlayerDataManager.Instance.Save();
     }
 
-    
-    void RecordTrial(string minigameId, ProgressionManager.LevelResult result, bool isCorrect, int wrongAttempts, int completionMs)
+    private void RecordTrial(
+        string minigameId,
+        ProgressionManager.LevelResult result,
+        bool isCorrect,
+        int attempts,
+        int completionMs
+    )
     {
         sessionData.Add(new TrialRecord
         {
             minigame_id = minigameId,
-            day = currentLevel,               // Legacy: store level as day
+            day = currentLevel,
             level_number = currentLevel,
             trial_index = trialIndexInLevel + 1,
 
@@ -467,7 +613,7 @@ public class ConstellationGameManager : MonoBehaviour
             sequence_recalled = playerSequence,
 
             is_correct = isCorrect,
-            wrong_attempts = wrongAttempts,
+            wrong_attempts = attempts,
             completion_time_ms = completionMs,
 
             level_score = result.score,
@@ -483,28 +629,37 @@ public class ConstellationGameManager : MonoBehaviour
         trialIndexInLevel++;
     }
 
-    // ── Utilities ─────────────────────────────────────────────────────────────
-
-    static int[] GenerateUniqueSequence(int span)
+    private static int[] GenerateUniqueSequence(int span)
     {
         List<int> pool = new();
-        for (int i = 1; i <= 9; i++) pool.Add(i);
+
+        for (int i = 1; i <= 9; i++)
+            pool.Add(i);
 
         for (int i = 0; i < span; i++)
         {
-            int j = UnityEngine.Random.Range(i, pool.Count);
-            (pool[i], pool[j]) = (pool[j], pool[i]);
+            int randomIndex = UnityEngine.Random.Range(i, pool.Count);
+            (pool[i], pool[randomIndex]) =
+                (pool[randomIndex], pool[i]);
         }
 
-        int[] seq = new int[span];
-        for (int i = 0; i < span; i++) seq[i] = pool[i];
-        return seq;
+        int[] sequence = new int[span];
+
+        for (int i = 0; i < span; i++)
+            sequence[i] = pool[i];
+
+        return sequence;
     }
 
     private void OnDestroy()
     {
-        if (controller != null) controller.OnTrialFinished -= HandleTrialFinished;
-        if (introductionManager != null) introductionManager.IntroductionCompleted -= HandleIntroductionCompleted;
-        if (constellationTutorial != null) constellationTutorial.TutorialCompleted -= HandleTutorialCompleted;
+        if (controller != null)
+            controller.OnTrialFinished -= HandleTrialFinished;
+
+        if (introductionManager != null)
+            introductionManager.IntroductionCompleted -= HandleIntroductionCompleted;
+
+        if (constellationTutorial != null)
+            constellationTutorial.TutorialCompleted -= HandleTutorialCompleted;
     }
 }

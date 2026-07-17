@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
+ 
 using RTLTMPro;
 using UnityEngine.UI;
 
@@ -26,9 +26,7 @@ public class IntroductionManager : MonoBehaviour
     [Header("Slides")]
     [SerializeField] private IntroductionSlide[] slides;
 
-    [Header("Flow")]
-    [SerializeField] private bool showOnlyFirstVisit = true;
-    [SerializeField] private bool forceShowOnStart = false;
+ 
 
     [Header("Container Resize")]
     [SerializeField] private Vector2 textPadding = new Vector2(40f, 25f);
@@ -41,13 +39,13 @@ public class IntroductionManager : MonoBehaviour
     [SerializeField] private UnityEvent onComplete;
 
     private int currentIndex;
-    private string sceneVisitKey;
+ 
     private RectTransform introPanelRect;
+    private bool isAllowedForCurrentLevel = true;
 
     private void Awake()
     {
-        sceneVisitKey = $"IntroShown_{SceneManager.GetActiveScene().name}";
-
+       
         if (introPanel != null)
         {
             introPanelRect = introPanel.GetComponent<RectTransform>();
@@ -72,45 +70,11 @@ public class IntroductionManager : MonoBehaviour
 
     private void Start()
     {
-        bool hasSlides = slides != null && slides.Length > 0;
-        if (!hasSlides)
+        // The minigame game manager allows the introduction only for level 1.
+        if (!isAllowedForCurrentLevel || slides == null || slides.Length == 0)
         {
             if (introPanel != null)
-            {
                 introPanel.SetActive(false);
-            }
-
-            NotifyCompleted();
-            return;
-        }
-
-        bool alreadyShown = PlayerPrefs.GetInt(sceneVisitKey, 0) == 1;
-
-        bool testingPreview =
-            forceShowOnStart ||
-            (introPanel != null && introPanel.activeSelf);
-
-        if (testingPreview)
-        {
-            currentIndex = 0;
-
-            if (introPanel != null)
-            {
-                introPanel.SetActive(true);
-            }
-
-            ShowCurrentMessage();
-            return;
-        }
-
-        bool shouldShow = !showOnlyFirstVisit || !alreadyShown;
-
-        if (!shouldShow)
-        {
-            if (introPanel != null)
-            {
-                introPanel.SetActive(false);
-            }
 
             NotifyCompleted();
             return;
@@ -119,21 +83,13 @@ public class IntroductionManager : MonoBehaviour
         currentIndex = 0;
 
         if (introPanel != null)
-        {
             introPanel.SetActive(true);
-        }
 
         ShowCurrentMessage();
     }
 
     public void ShowNextMessage()
     {
-        if (slides == null || slides.Length == 0)
-        {
-            CompleteIntroduction();
-            return;
-        }
-
         currentIndex++;
 
         if (currentIndex >= slides.Length)
@@ -226,15 +182,11 @@ public class IntroductionManager : MonoBehaviour
 
     private void CompleteIntroduction()
     {
-        PlayerPrefs.SetInt(sceneVisitKey, 1);
-        PlayerPrefs.Save();
-
         if (introPanel != null)
-        {
             introPanel.SetActive(false);
-        }
 
-        NotifyCompleted();
+        onComplete?.Invoke();
+        IntroductionCompleted?.Invoke();
     }
 
     private void NotifyCompleted()
@@ -243,9 +195,13 @@ public class IntroductionManager : MonoBehaviour
         IntroductionCompleted?.Invoke();
     }
 
-    public void ResetSceneIntroduction()
+ 
+
+    public void SetAllowedForCurrentLevel(bool allowed)
     {
-        PlayerPrefs.DeleteKey(sceneVisitKey);
-        PlayerPrefs.Save();
+        isAllowedForCurrentLevel = allowed;
+
+        if (!allowed && introPanel != null)
+            introPanel.SetActive(false);
     }
 }
