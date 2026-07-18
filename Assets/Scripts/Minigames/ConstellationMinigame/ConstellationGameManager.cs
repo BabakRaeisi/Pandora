@@ -513,10 +513,9 @@ public class ConstellationGameManager : MonoBehaviour
                 nextLevel
             );
 
-            // Passing Constellation's gateway awards gem 1
-            // and enables the Bridge map button on the island.
-            if (!assistedLevelCompletion &&
-                config.IsGatewayLevel(levelCfg))
+            // Completing Constellation's gateway, including an assisted pass,
+            // awards gem 1 and unlocks the Bridge minigame.
+            if (config.IsGatewayLevel(levelCfg))
             {
                 data.constellationGateReached = true;
                 data.bridgeUnlocked = true;
@@ -528,7 +527,6 @@ public class ConstellationGameManager : MonoBehaviour
 
         bool showKey =
             completedCurrentUnlockedLevel &&
-            !assistedLevelCompletion &&
             config.IsGatewayLevel(levelCfg);
 
         string message = assistedLevelCompletion

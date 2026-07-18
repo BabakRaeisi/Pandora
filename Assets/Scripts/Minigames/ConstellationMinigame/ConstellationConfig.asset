@@ -15,7 +15,7 @@ MonoBehaviour:
   levels:
   - levelNumber: 1
     trials: 6
-    isGatewayLevel: 1
+    isGatewayLevel: 0
     spanMin: 3
     spanMax: 3
     lockDurationHours: 0
@@ -162,7 +162,7 @@ MonoBehaviour:
       message: 
   - levelNumber: 7
     trials: 6
-    isGatewayLevel: 0
+    isGatewayLevel: 1
     spanMin: 4
     spanMax: 6
     lockDurationHours: 2

@@ -32,10 +32,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Minigame_Treasure.unity
     guid: a9dbf7c1369eaf744a46ff71cb9fff73
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/OutroScene.unity
     guid: c6ea05cad82cc7d4a8b80f53714b4c79
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/FinalAnimationScene.unity
     guid: 44c5bd50252ba764189e559278fc97e1
   m_configObjects:

@@ -673,8 +673,9 @@ public class BridgeGameManager : MonoBehaviour
 
             data.bridgeLevel = Mathf.Max(data.bridgeLevel, nextLevel);
 
-            if (!assistedLevelCompletion &&
-                config.IsGatewayLevel(levelCfg))
+            // Completing Bridge's gateway, including an assisted pass,
+            // awards its key and unlocks the next minigame.
+            if (config.IsGatewayLevel(levelCfg))
             {
                 data.bridgeGateReached = true;
                 data.swmUnlocked = true;
@@ -683,15 +684,17 @@ public class BridgeGameManager : MonoBehaviour
             PlayerDataManager.Instance.Save();
         }
 
+        bool showKey =
+            completedCurrentUnlockedLevel &&
+            config.IsGatewayLevel(levelCfg);
+
         feedbackMessanger?.ShowOutcomePanel(
             string.Empty,
             assistedLevelCompletion
                 ? config.GetRandomAssistedPassMessage()
                 : config.GetFinalSuccessMessage(levelCfg),
             assistedLevelCompletion,
-            completedCurrentUnlockedLevel &&
-            !assistedLevelCompletion &&
-            config.IsGatewayLevel(levelCfg)
+            showKey
         );
 
         hud?.ShowDayComplete();

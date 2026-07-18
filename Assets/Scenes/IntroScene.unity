@@ -726,7 +726,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4485002462041389800}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 465b511693117214e96f494b1ec1573d, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: 9a6b8de9b3322834f95b7899b77e627c, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
@@ -736,7 +736,7 @@ VideoPlayer:
   m_TargetMaterialProperty: <noninit>
   m_RenderMode: 2
   m_AspectRatio: 2
-  m_DataSource: 1
+  m_DataSource: 0
   m_TimeUpdateMode: 2
   m_PlaybackSpeed: 1
   m_AudioOutputMode: 2
@@ -744,7 +744,7 @@ VideoPlayer:
   - {fileID: 0}
   m_DirectAudioVolumes:
   - 1
-  m_Url: Assets/Art/video/Intro Cutscene.mp4
+  m_Url: Assets/Art/video/ChestBreaks.mp4
   m_EnabledAudioTracks: 01
   m_DirectAudioMutes: 00
   m_ControlledAudioTrackCount: 1
