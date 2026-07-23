@@ -15,8 +15,8 @@ MonoBehaviour:
   levels:
   - levelNumber: 1
     boxes: 3
-    treasures: 2
-    trials: 5
+    treasures: 1
+    trials: 4
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -48,8 +48,8 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 2
-    boxes: 4
-    treasures: 2
+    boxes: 3
+    treasures: 1
     trials: 5
     isGatewayLevel: 0
     lockDurationHours: 0
@@ -83,8 +83,8 @@ MonoBehaviour:
     levelUpInfoMessageFa: 
   - levelNumber: 3
     boxes: 4
-    treasures: 3
-    trials: 6
+    treasures: 1
+    trials: 5
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -116,8 +116,8 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 4
-    boxes: 6
-    treasures: 3
+    boxes: 4
+    treasures: 1
     trials: 6
     isGatewayLevel: 0
     lockDurationHours: 0
@@ -150,9 +150,9 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 5
-    boxes: 6
-    treasures: 4
-    trials: 7
+    boxes: 5
+    treasures: 1
+    trials: 6
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -184,8 +184,8 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 6
-    boxes: 6
-    treasures: 4
+    boxes: 5
+    treasures: 1
     trials: 7
     isGatewayLevel: 0
     lockDurationHours: 0
@@ -218,9 +218,9 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 7
-    boxes: 8
-    treasures: 4
-    trials: 8
+    boxes: 6
+    treasures: 1
+    trials: 7
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -252,9 +252,9 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 8
-    boxes: 3
-    treasures: 2
-    trials: 5
+    boxes: 7
+    treasures: 1
+    trials: 7
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -286,9 +286,9 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 9
-    boxes: 4
-    treasures: 2
-    trials: 5
+    boxes: 7
+    treasures: 1
+    trials: 8
     isGatewayLevel: 0
     lockDurationHours: 0
     wrongPatternMessagesFa:
@@ -320,9 +320,9 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 10
-    boxes: 4
-    treasures: 3
-    trials: 6
+    boxes: 8
+    treasures: 1
+    trials: 8
     isGatewayLevel: 1
     lockDurationHours: 0
     wrongPatternMessagesFa:

@@ -24,6 +24,10 @@ public class ConstellationMapManager : MonoBehaviour
     [SerializeField] private Color lockedTop = new(0.80f, 0.80f, 0.80f);
     [SerializeField] private Color lockedBottom = new(0.72f, 0.72f, 0.72f);
 
+    [Header("Gateway Background")]
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite gatewayPassedBackground;
+
     private int unlockedLevel;
     private int selectedLevel;
 
@@ -36,6 +40,9 @@ public class ConstellationMapManager : MonoBehaviour
         }
 
         PlayerSaveData data = PlayerDataManager.Instance.Data;
+
+        ApplyGatewayBackground(data.constellationGateReached);
+
         unlockedLevel = Mathf.Clamp(
             data.constellationLevel,
             MinLevel,
@@ -177,5 +184,25 @@ public class ConstellationMapManager : MonoBehaviour
         gradient.colorTop = top;
         gradient.colorBottom = bottom;
         gradient.enabled = true;
+    }
+
+    public void ApplyGatewayBackground(int gateReached)
+    {
+        if (gateReached > 0)
+        {
+            if (gatewayPassedPanel != null)
+            {
+                gatewayPassedPanel.SetActive(true);
+                gatewayPassedPanel.GetComponent<Image>().sprite = gatewayPassedBackground;
+            }
+        }
+    }
+
+    private void ApplyGatewayBackground(bool gatewayPassed)
+    {
+        if (!gatewayPassed || backgroundImage == null || gatewayPassedBackground == null)
+            return;
+
+        backgroundImage.sprite = gatewayPassedBackground;
     }
 }

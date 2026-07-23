@@ -1,5 +1,4 @@
 using System.Collections.Generic;
- 
 using UnityEngine;
 
 public class ChestSpawnerRandom : MonoBehaviour
@@ -11,201 +10,190 @@ public class ChestSpawnerRandom : MonoBehaviour
     [SerializeField] private SWMChest chestPrefab;
 
     [Header("Placement")]
-    [SerializeField] private float padding = 20f;
-    [SerializeField] private float minGap = 20f;
-    [SerializeField] private float minDistance = 120f;     // tweak based on chest size + desired spacing
-    [SerializeField] private int maxAttemptsPerChest = 200;
- 
+    [SerializeField, Min(0f)] private float padding = 20f;
+    [SerializeField, Min(0f)] private float minGap = 20f;
 
-    // Spawn ONCE for the day, initialize Index + manager, and place inside bounds.
+    [Tooltip("Small variation inside each safe grid cell.")]
+    [SerializeField, Min(0f)] private float positionJitter = 18f;
+
+    [Tooltip("Do not make chests smaller than this unless the play area cannot fit them.")]
+    [SerializeField, Range(0.1f, 1f)] private float preferredMinimumScale = 0.55f;
+
+    // Spawn once for the level. The manager should call Reposition once after
+    // deciding how many chests that level uses.
     public List<SWMChest> SpawnPool(int count, SWMGameManager gm)
     {
         var list = new List<SWMChest>(count);
 
         for (int i = 0; i < count; i++)
         {
-            var chest = Instantiate(chestPrefab, playArea);
-
-            // Restore old wiring (Index + GameManager)
+            SWMChest chest = Instantiate(chestPrefab, playArea);
             chest.Init(i, gm);
-
             list.Add(chest);
         }
 
-        // initial layout
-        Reposition(list, count);
         return list;
     }
 
-    // Reposition SAME chests each trial.
-    // - Activates first activeCount, disables rest
-    // - Tries multiple full layouts so it doesn't "half succeed"
-    // - Keeps chests fully inside playArea bounds (uses chest rect size)
+    /// <summary>
+    /// Places active chests in randomized, non-overlapping cells.
+    /// If the area cannot fit all chests at scale 1, all active chests are
+    /// scaled down equally rather than being allowed to overlap.
+    /// </summary>
     public void Reposition(List<SWMChest> pool, int activeCount)
     {
-        if (pool == null) return;
+        if (pool == null || pool.Count == 0)
+            return;
 
-        RectTransform area = playArea ? playArea : (RectTransform)transform;
-        Rect r = area.rect;
+        RectTransform area = playArea != null
+            ? playArea
+            : transform as RectTransform;
 
-        activeCount = Mathf.Clamp(activeCount, 0, pool.Count);
-
-        // Enable first N, disable rest
-        for (int i = 0; i < pool.Count; i++)
+        if (area == null || chestPrefab == null)
         {
-            if (!pool[i]) continue;
-            pool[i].gameObject.SetActive(i < activeCount);
-        }
-
-        if (activeCount <= 0) return;
-
-        // Chest size (use prefab sizeDelta like your old working function)
-        RectTransform prefabRT = chestPrefab.GetComponent<RectTransform>();
-        Vector2 size = prefabRT.sizeDelta;
-
-        float halfW = size.x * 0.5f;
-        float halfH = size.y * 0.5f;
-
-        float minX = r.xMin + padding + halfW;
-        float maxX = r.xMax - padding - halfW;
-        float minY = r.yMin + padding + halfH;
-        float maxY = r.yMax - padding - halfH;
-
-        if (minX >= maxX || minY >= maxY)
-        {
-            Debug.LogError("PlayArea too small for chest size + padding.");
-            // Keep them inside anyway (all centered) to avoid NaNs/out of bounds
-            for (int i = 0; i < activeCount; i++)
-            {
-                if (!pool[i]) continue;
-                var rt = pool[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = Vector2.zero;
-                rt.localScale = Vector3.one;
-            }
+            Debug.LogError("[ChestSpawnerRandom] Missing Play Area or Chest Prefab.");
             return;
         }
 
-        float minDist = Mathf.Max(size.x, size.y) + minGap;
-        float minDistSqr = minDist * minDist;
+        activeCount = Mathf.Clamp(activeCount, 0, pool.Count);
 
-        // We try multiple full-layout passes (avoids partial success)
-        const int layoutAttempts = 30;
-        bool success = false;
-
-        for (int pass = 0; pass < layoutAttempts && !success; pass++)
+        for (int i = 0; i < pool.Count; i++)
         {
-            success = true;
-            List<Vector2> points = new List<Vector2>(activeCount);
+            if (pool[i] != null)
+                pool[i].gameObject.SetActive(i < activeCount);
+        }
 
-            for (int i = 0; i < activeCount; i++)
+        if (activeCount == 0)
+            return;
+
+        RectTransform prefabRect = chestPrefab.GetComponent<RectTransform>();
+
+        Vector2 chestSize = prefabRect.rect.size;
+
+        if (chestSize.x <= 0f || chestSize.y <= 0f)
+            chestSize = prefabRect.sizeDelta;
+
+        if (chestSize.x <= 0f || chestSize.y <= 0f)
+        {
+            Debug.LogError("[ChestSpawnerRandom] Chest prefab has an invalid RectTransform size.");
+            return;
+        }
+
+        Rect areaRect = area.rect;
+
+        float availableWidth = areaRect.width - padding * 2f;
+        float availableHeight = areaRect.height - padding * 2f;
+
+        if (availableWidth <= 0f || availableHeight <= 0f)
+        {
+            Debug.LogError("[ChestSpawnerRandom] Play area is too small after padding.");
+            return;
+        }
+
+        int bestColumns = 1;
+        int bestRows = activeCount;
+        float bestScale = 0f;
+
+        // Find the grid shape that allows the largest possible chest scale.
+        for (int columns = 1; columns <= activeCount; columns++)
+        {
+            int rows = Mathf.CeilToInt(activeCount / (float)columns);
+
+            float requiredWidthAtScaleOne =
+                columns * chestSize.x + (columns - 1) * minGap;
+
+            float requiredHeightAtScaleOne =
+                rows * chestSize.y + (rows - 1) * minGap;
+
+            float scaleForWidth = availableWidth / requiredWidthAtScaleOne;
+            float scaleForHeight = availableHeight / requiredHeightAtScaleOne;
+            float candidateScale = Mathf.Min(scaleForWidth, scaleForHeight, 1f);
+
+            if (candidateScale > bestScale)
             {
-                bool placed = false;
-
-                for (int t = 0; t < maxAttemptsPerChest; t++)
-                {
-                    Vector2 p = new Vector2(
-                        Random.Range(minX, maxX),
-                        Random.Range(minY, maxY)
-                    );
-
-                    bool overlaps = false;
-                    for (int k = 0; k < points.Count; k++)
-                    {
-                        if ((p - points[k]).sqrMagnitude < minDistSqr)
-                        {
-                            overlaps = true;
-                            break;
-                        }
-                    }
-
-                    if (overlaps) continue;
-
-                    points.Add(p);
-                    placed = true;
-                    break;
-                }
-
-                if (!placed)
-                {
-                    success = false;
-                    break; // fail this pass, retry whole layout
-                }
-            }
-
-            if (success)
-            {
-                // Apply positions
-                for (int i = 0; i < activeCount; i++)
-                {
-                    if (!pool[i]) continue;
-                    var rt = pool[i].GetComponent<RectTransform>();
-                    rt.anchoredPosition = points[i];
-                    rt.localScale = Vector3.one;
-                }
+                bestScale = candidateScale;
+                bestColumns = columns;
+                bestRows = rows;
             }
         }
 
-        if (!success)
+        if (bestScale <= 0f)
         {
-            Debug.LogWarning("Reposition: Could not place all chests without overlap. Reduce count/minGap/padding or enlarge PlayArea.");
+            Debug.LogError("[ChestSpawnerRandom] Could not calculate a valid chest layout.");
+            return;
+        }
 
-            // Fallback: still keep inside bounds (may overlap, but never out of bounds)
-            for (int i = 0; i < activeCount; i++)
-            {
-                if (!pool[i]) continue;
+        if (bestScale < preferredMinimumScale)
+        {
+            Debug.LogWarning(
+                $"[ChestSpawnerRandom] {activeCount} chests require scale {bestScale:F2} " +
+                $"to avoid overlap in the current Play Area. Enlarge the Play Area, " +
+                $"reduce Padding/Min Gap, or use a smaller chest sprite."
+            );
+        }
 
-                Vector2 p = new Vector2(
-                    Random.Range(minX, maxX),
-                    Random.Range(minY, maxY)
-                );
+        float scaledChestWidth = chestSize.x * bestScale;
+        float scaledChestHeight = chestSize.y * bestScale;
 
-                var rt = pool[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = p;
-                rt.localScale = Vector3.one;
-            }
+        float layoutWidth =
+            bestColumns * scaledChestWidth + (bestColumns - 1) * minGap;
+
+        float layoutHeight =
+            bestRows * scaledChestHeight + (bestRows - 1) * minGap;
+
+        float layoutLeft = areaRect.center.x - layoutWidth * 0.5f;
+        float layoutTop = areaRect.center.y + layoutHeight * 0.5f;
+
+        List<int> slotIndices = new List<int>(bestColumns * bestRows);
+
+        for (int slot = 0; slot < bestColumns * bestRows; slot++)
+            slotIndices.Add(slot);
+
+        Shuffle(slotIndices);
+
+        float cellWidth = scaledChestWidth + minGap;
+        float cellHeight = scaledChestHeight + minGap;
+
+        // Jitter is limited to half the gap, so neighboring chest rectangles
+        // can never overlap.
+        float safeJitter = Mathf.Min(positionJitter, minGap * 0.45f);
+
+        for (int chestIndex = 0; chestIndex < activeCount; chestIndex++)
+        {
+            SWMChest chest = pool[chestIndex];
+
+            if (chest == null)
+                continue;
+
+            int slot = slotIndices[chestIndex];
+            int row = slot / bestColumns;
+            int column = slot % bestColumns;
+
+            float x = layoutLeft + scaledChestWidth * 0.5f + column * cellWidth;
+            float y = layoutTop - scaledChestHeight * 0.5f - row * cellHeight;
+
+            x += Random.Range(-safeJitter, safeJitter);
+            y += Random.Range(-safeJitter, safeJitter);
+
+            RectTransform chestRect = chest.GetComponent<RectTransform>();
+
+            chestRect.anchorMin = new Vector2(0.5f, 0.5f);
+            chestRect.anchorMax = new Vector2(0.5f, 0.5f);
+            chestRect.pivot = new Vector2(0.5f, 0.5f);
+            chestRect.anchoredPosition = new Vector2(x, y);
+            chestRect.localScale = Vector3.one * bestScale;
         }
     }
 
-
-    // Picks a position for the chest at index "placedUpTo" that doesn't overlap already-placed [0..placedUpTo-1]
-    private bool TryPickPosition(List<SWMChest> pool, int placedUpTo,
-                                 float minX, float maxX, float minY, float maxY,
-                                 out Vector2 result)
+    private static void Shuffle<T>(List<T> list)
     {
-        result = Vector2.zero;
-
-        int attempts = Mathf.Max(1, maxAttemptsPerChest);
-
-        for (int a = 0; a < attempts; a++)
+        for (int i = list.Count - 1; i > 0; i--)
         {
-            float x = Random.Range(minX, maxX);
-            float y = Random.Range(minY, maxY);
-            Vector2 candidate = new Vector2(x, y);
+            int randomIndex = Random.Range(0, i + 1);
 
-            bool ok = true;
-
-            for (int j = 0; j < placedUpTo; j++)
-            {
-                var other = pool[j];
-                if (!other) continue;
-
-                var rt = other.GetComponent<RectTransform>();
-                if (!rt) continue;
-
-                if (Vector2.Distance(candidate, rt.anchoredPosition) < minDistance)
-                {
-                    ok = false;
-                    break;
-                }
-            }
-
-            if (ok)
-            {
-                result = candidate;
-                return true;
-            }
+            T temporary = list[i];
+            list[i] = list[randomIndex];
+            list[randomIndex] = temporary;
         }
-
-        return false;
     }
 }

@@ -26,6 +26,7 @@ public class SWMGameManager : MonoBehaviour
     [SerializeField, Min(1)] private int assistedFailLimit = 3;
 
     private const string SelectedLevelKey = "TreasureSelectedLevel";
+    private const string GatewayPanelPendingKey = "SWMGatewayPanelPending";
 
     private Coroutine autoNextTrialRoutine;
 
@@ -326,48 +327,57 @@ public class SWMGameManager : MonoBehaviour
             if (pool[i] != null)
                 chestId[pool[i]] = i;
         }
+    
+        // Randomize chest positions once for this level.
+        // They remain fixed while all trials in this level are played.
+        spawner.Reposition(pool, poolSize);
 
         StartNextTrial();
     }
 
-    public void StartNextTrial()
+ public void StartNextTrial()
+{
+    if (trialsCompleteInLevel >= levelCfg.trials)
     {
-        if (trialsCompleteInLevel >= levelCfg.trials)
-        {
-            CompleteLevelAfterTrials(false);
-            return;
-        }
-
-        StopRunningTrialRoutines();
-
-        trialComplete = false;
-        firstClickTime = -1f;
-
-        numBoxes = Mathf.Clamp(levelCfg.boxes, 3, poolSize);
-        goalCollected = Mathf.Clamp(levelCfg.treasures, 1, numBoxes);
-
-        collectedFound = 0;
-        betweenErrors = 0;
-        withinErrors = 0;
-        totalSelections = 0;
-
-     hud?.SetupTrial();
-        spawner.Reposition(pool, numBoxes);
-
-        treasureIndices = PickUniqueIndices(numBoxes, goalCollected);
-
-        for (int i = 0; i < numBoxes; i++)
-        {
-            if (pool[i] == null)
-                continue;
-
-            pool[i].ResetForTrial(treasureIndices.Contains(i));
-        }
-
-        trialStartTime = Time.time;
-        currentData = NewTrialDataSkeleton();
+        CompleteLevelAfterTrials(false);
+        return;
     }
 
+    StopRunningTrialRoutines();
+
+    trialComplete = false;
+    firstClickTime = -1f;
+
+    numBoxes = Mathf.Clamp(levelCfg.boxes, 3, poolSize);
+
+    // Every trial uses a new randomized, non-overlapping chest arrangement.
+    spawner.Reposition(pool, numBoxes);
+
+    // One treasure is hidden in one random active chest for this trial.
+    goalCollected = 1;
+
+    collectedFound = 0;
+    betweenErrors = 0;
+    withinErrors = 0;
+    totalSelections = 0;
+
+    hud?.SetupTrial();
+
+    // New randomized chest positions for this trial.
+    spawner.Reposition(pool, numBoxes);
+
+    // One treasure changes location each trial.
+    treasureIndices = PickUniqueIndices(numBoxes, 1);
+
+    for (int i = 0; i < numBoxes; i++)
+    {
+        if (pool[i] != null)
+            pool[i].ResetForTrial(treasureIndices.Contains(i));
+    }
+
+    trialStartTime = Time.time;
+    currentData = NewTrialDataSkeleton();
+}
     public void OnChestPressed(SWMChest chest)
     {
         if (trialComplete || chest == null || !chest.gameObject.activeInHierarchy)
@@ -391,14 +401,15 @@ public class SWMGameManager : MonoBehaviour
 
             if (chest.HasTreasure)
             {
-                collectedFound++;
+                collectedFound = 1;
 
                 RecordSelection(chestIndex, "treasure", elapsedMs);
                 AudioManager.Instance.Play("Coin");
 
-                if (collectedFound >= goalCollected)
-                    CompleteTrial(false);
-
+                // Exactly one treasure per trial.
+                // CompleteTrial schedules the next trial, which randomizes chest placement
+                // and assigns a new treasure chest.
+                CompleteTrial(false);
                 return;
             }
 
@@ -572,14 +583,33 @@ public class SWMGameManager : MonoBehaviour
 
             data.swmLevel = Mathf.Max(data.swmLevel, nextLevel);
 
-            // Passing Treasure/SWM's gateway awards gem 3.
-            if (!assistedLevelCompletion &&
-                config.IsGatewayLevel(levelCfg))
-            {
+            // Match Constellation and Bridge gateway behavior.
+            if (config.IsGatewayLevel(levelCfg))
                 data.swmGateReached = true;
-            }
 
             PlayerDataManager.Instance.Save();
+        }
+
+        bool passedGatewayLevel =
+            completedCurrentUnlockedLevel &&
+            !assistedLevelCompletion &&
+            config.IsGatewayLevel(levelCfg);
+
+        // Gateway completion must be saved even if this level was replayed.
+        if (passedGatewayLevel)
+        {
+            data.swmGateReached = true;
+
+            // Permanent progression state: changes SWM map background.
+            data.swmGateReached = true;
+
+            // Temporary state: show the gateway popup only on the next SWM map load.
+            PlayerPrefs.SetInt(GatewayPanelPendingKey, 1);
+            PlayerPrefs.Save();
+
+            Debug.Log(
+                $"[SWMGameManager] SWM gateway reached at level {levelStartedAt}."
+            );
         }
 
         feedbackMessanger?.ShowOutcomePanel(
@@ -588,9 +618,7 @@ public class SWMGameManager : MonoBehaviour
                 ? config.GetRandomAssistedPassMessage()
                 : config.GetFinalSuccessMessage(levelCfg),
             assistedLevelCompletion,
-            completedCurrentUnlockedLevel &&
-            !assistedLevelCompletion &&
-            config.IsGatewayLevel(levelCfg)
+            passedGatewayLevel
         );
 
         hud?.ShowDayComplete();

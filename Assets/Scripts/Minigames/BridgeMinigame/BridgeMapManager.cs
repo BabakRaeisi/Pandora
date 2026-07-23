@@ -24,6 +24,10 @@ public class BridgeMapManager : MonoBehaviour
     [SerializeField] private Color lockedTop = new Color(0.80f, 0.80f, 0.80f);
     [SerializeField] private Color lockedBottom = new Color(0.72f, 0.72f, 0.72f);
 
+    [Header("Gateway Background")]
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite gatewayPassedBackground;
+
     private int unlockedLevel;
     private int selectedLevel;
 
@@ -38,13 +42,18 @@ public class BridgeMapManager : MonoBehaviour
         int totalLevels = GetTotalLevels();
         var data = PlayerDataManager.Instance.Data;
 
+        // Persistent visual change after gateway completion.
+        ApplyGatewayBackground(data.bridgeGateReached);
+
         unlockedLevel = Mathf.Clamp(data.bridgeLevel, MinLevel, totalLevels);
 
         int savedSelectedLevel = PlayerPrefs.GetInt(SelectedLevelKey, unlockedLevel);
         selectedLevel = Mathf.Clamp(savedSelectedLevel, MinLevel, unlockedLevel);
 
-        TryShowGatewayPassedPanel();
         BuildButtons();
+
+        // One-time gateway popup, matching ConstellationMapManager.
+        TryShowGatewayPassedPanel();
     }
 
     private int GetTotalLevels()
@@ -66,18 +75,19 @@ public class BridgeMapManager : MonoBehaviour
         if (config == null || config.levels == null || config.levels.Length == 0)
             return;
 
-        // A level is passed when the next level has already been unlocked.
+        // A passed level is any level before the current unlocked level.
         int maxPassedLevel = unlockedLevel - 1;
 
         for (int passedLevel = MinLevel; passedLevel <= maxPassedLevel; passedLevel++)
         {
-            BridgeConfig.LevelConfig passedConfig = config.GetLevel(passedLevel);
+            BridgeConfig.LevelConfig level = config.GetLevel(passedLevel);
 
-            if (!config.IsGatewayLevel(passedConfig))
+            if (!config.IsGatewayLevel(level))
                 continue;
 
             string shownKey = GatewayShownKeyPrefix + passedLevel;
 
+            // Show the gateway popup once for this specific gateway level.
             if (PlayerPrefs.GetInt(shownKey, 0) == 1)
                 continue;
 
@@ -86,8 +96,6 @@ public class BridgeMapManager : MonoBehaviour
 
             PlayerPrefs.SetInt(shownKey, 1);
             PlayerPrefs.Save();
-
-            // Only show one previously unseen gateway notification at a time.
             break;
         }
     }
@@ -158,5 +166,13 @@ public class BridgeMapManager : MonoBehaviour
         gradient.colorTop = top;
         gradient.colorBottom = bottom;
         gradient.enabled = true;
+    }
+
+    private void ApplyGatewayBackground(bool gatewayPassed)
+    {
+        if (!gatewayPassed || backgroundImage == null || gatewayPassedBackground == null)
+            return;
+
+        backgroundImage.sprite = gatewayPassedBackground;
     }
 }

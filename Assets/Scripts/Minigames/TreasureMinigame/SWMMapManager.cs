@@ -24,8 +24,20 @@ public class SWMMapManager : MonoBehaviour
     [SerializeField] private Color lockedTop = new Color(0.80f, 0.80f, 0.80f);
     [SerializeField] private Color lockedBottom = new Color(0.72f, 0.72f, 0.72f);
 
+    [Header("Gateway Background")]
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite gatewayPassedBackground;
+
+    private Sprite defaultBackground;
+
     private int unlockedLevel;
     private int selectedLevel;
+
+    private void Awake()
+    {
+        if (backgroundImage != null)
+            defaultBackground = backgroundImage.sprite;
+    }
 
     private void Start()
     {
@@ -42,6 +54,14 @@ public class SWMMapManager : MonoBehaviour
         int totalLevels = GetTotalLevels();
         var data = PlayerDataManager.Instance.Data;
 
+        Debug.Log(
+            $"[SWMMapManager] swmGateReached = {data.swmGateReached}",
+            this
+        );
+
+        ApplyGatewayBackground(data.swmGateReached);
+        ShowPendingGatewayPanel(data.swmGateReached);
+
         unlockedLevel = Mathf.Clamp(data.swmLevel, MinLevel, totalLevels);
 
         int savedSelectedLevel = PlayerPrefs.GetInt(
@@ -55,7 +75,6 @@ public class SWMMapManager : MonoBehaviour
             unlockedLevel
         );
 
-        TryShowGatewayPassedPanel();
         BuildButtons();
     }
 
@@ -72,47 +91,6 @@ public class SWMMapManager : MonoBehaviour
         }
 
         return MinLevel;
-    }
-
-    private void TryShowGatewayPassedPanel()
-    {
-        if (gatewayPassedPanel != null)
-            gatewayPassedPanel.SetActive(false);
-
-        if (config == null ||
-            config.levels == null ||
-            config.levels.Length == 0)
-        {
-            return;
-        }
-
-        // A level is passed when the following level is unlocked.
-        int maxPassedLevel = unlockedLevel - 1;
-
-        for (int passedLevel = MinLevel;
-             passedLevel <= maxPassedLevel;
-             passedLevel++)
-        {
-            SWMConfig.LevelConfig passedConfig =
-                config.GetLevel(passedLevel);
-
-            if (!config.IsGatewayLevel(passedConfig))
-                continue;
-
-            string shownKey = GatewayShownKeyPrefix + passedLevel;
-
-            if (PlayerPrefs.GetInt(shownKey, 0) == 1)
-                continue;
-
-            if (gatewayPassedPanel != null)
-                gatewayPassedPanel.SetActive(true);
-
-            PlayerPrefs.SetInt(shownKey, 1);
-            PlayerPrefs.Save();
-
-            // Show only one unshown gateway notice at once.
-            break;
-        }
     }
 
     public void CloseGatewayPassedPanel()
@@ -191,5 +169,45 @@ public class SWMMapManager : MonoBehaviour
         gradient.colorTop = top;
         gradient.colorBottom = bottom;
         gradient.enabled = true;
+    }
+
+    public void ApplyGatewayBackground(bool swmGatewayReached)
+    {
+        if (backgroundImage == null)
+            return;
+
+        // Normal SWM map background before the SWM gateway is completed.
+        if (!swmGatewayReached)
+        {
+            backgroundImage.sprite = defaultBackground;
+            return;
+        }
+
+        // Gateway-completed SWM map background.
+        if (gatewayPassedBackground != null)
+            backgroundImage.sprite = gatewayPassedBackground;
+    }
+
+    private void ShowPendingGatewayPanel(bool swmGatewayReached)
+    {
+        if (gatewayPassedPanel == null)
+            return;
+
+        // Never show by default when entering SWM map from Main Menu.
+        gatewayPassedPanel.SetActive(false);
+
+        const string gatewayPanelPendingKey = "SWMGatewayPanelPending";
+
+        bool returnedFromCompletedGateway =
+            PlayerPrefs.GetInt(gatewayPanelPendingKey, 0) == 1;
+
+        if (!swmGatewayReached || !returnedFromCompletedGateway)
+            return;
+
+        gatewayPassedPanel.SetActive(true);
+
+        // Consume it immediately. Later Menu -> SWM Map visits will not show it.
+        PlayerPrefs.DeleteKey(gatewayPanelPendingKey);
+        PlayerPrefs.Save();
     }
 }

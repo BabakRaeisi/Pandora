@@ -3147,6 +3147,8 @@ MonoBehaviour:
   unlockedBottom: {r: 1, g: 1, b: 1, a: 1}
   lockedTop: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   lockedBottom: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+  backgroundImage: {fileID: 1506463083}
+  gatewayPassedBackground: {fileID: 5272288251474843228, guid: 8168e8822a951dc4cb20d379d015dcba, type: 3}
 --- !u!114 &1535900645
 MonoBehaviour:
   m_ObjectHideFlags: 0

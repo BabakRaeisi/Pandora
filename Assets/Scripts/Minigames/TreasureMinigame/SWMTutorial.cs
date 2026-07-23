@@ -125,6 +125,7 @@ public class SWMTutorial : MonoBehaviour
     {
         while (tutorialIsOpen)
         {
+            // A new trial starts: every chest is closed.
             SetAllChestsClosed();
             HidePointerAndError();
 
@@ -133,52 +134,87 @@ public class SWMTutorial : MonoBehaviour
             if (!tutorialIsOpen)
                 yield break;
 
-            // Open each configured chest once.
-            // Its Has Treasure checkbox decides whether it displays
-            // the Empty sprite or the Full/Treasure sprite.
-            for (int i = 0; i < demoChests.Count; i++)
-            {
-                if (!IsChestValid(i))
-                    continue;
+            int treasureChestIndex = GetTreasureChestIndex();
 
-                yield return MovePointerTo(demoChests[i].rect.anchoredPosition);
+            if (treasureChestIndex < 0)
+            {
+                Debug.LogWarning(
+                    "[SWMTutorial] Assign exactly one demo chest with Has Treasure enabled.",
+                    this
+                );
+
+                yield return new WaitForSeconds(loopPause);
+                continue;
+            }
+
+            // Demonstrate searching an empty chest first.
+            int emptyChestIndex = GetFirstEmptyChestIndex(treasureChestIndex);
+
+            if (emptyChestIndex >= 0)
+            {
+                yield return MovePointerTo(
+                    demoChests[emptyChestIndex].rect.anchoredPosition
+                );
+
                 yield return AnimatePointerClick();
 
-                RevealChest(i);
+                // Empty chests remain open for the rest of the trial.
+                RevealChest(emptyChestIndex);
 
-                // Keep the opened empty/treasure chest visible briefly.
                 yield return new WaitForSeconds(chestRevealDuration);
 
                 if (!tutorialIsOpen)
                     yield break;
 
-                // Return this chest to its closed sprite before moving the pointer onward.
-                CloseChest(i);
+                // The chest closes after the player sees it is empty.
+                CloseChest(emptyChestIndex);
 
-                yield return new WaitForSeconds(0.15f);
+                yield return new WaitForSeconds(0.25f);
 
                 if (!tutorialIsOpen)
                     yield break;
-            }
 
-            // Demonstrate an error:
-            // pointer clicks the same already-opened chest again.
-            int repeatedChestIndex = GetFirstValidChestIndex();
+                // Second click on the same chest: it opens empty again.
+                // This demonstrates the repeated-selection error.
+                yield return MovePointerTo(
+                    demoChests[emptyChestIndex].rect.anchoredPosition
+                );
 
-            if (repeatedChestIndex >= 0)
-            {
-                Vector2 chestPosition =
-                    demoChests[repeatedChestIndex].rect.anchoredPosition;
-
-                yield return MovePointerTo(chestPosition);
                 yield return AnimatePointerClick();
+                RevealChest(emptyChestIndex);
+
+                yield return new WaitForSeconds(chestRevealDuration * 0.5f);
+
+                if (!tutorialIsOpen)
+                    yield break;
+
                 yield return AnimatePointerError();
                 yield return ShowErrorAtPointer();
 
+                CloseChest(emptyChestIndex);
+
                 if (!tutorialIsOpen)
                     yield break;
+
+                yield return new WaitForSeconds(0.2f);
             }
 
+            // Find the one treasure. This completes the trial.
+            yield return MovePointerTo(
+                demoChests[treasureChestIndex].rect.anchoredPosition
+            );
+
+            yield return AnimatePointerClick();
+
+            RevealChest(treasureChestIndex);
+
+            yield return new WaitForSeconds(chestRevealDuration);
+
+            if (!tutorialIsOpen)
+                yield break;
+
+            // The following reset represents the next trial:
+            // one new treasure location, and chests return to closed state.
             pointer.gameObject.SetActive(false);
 
             yield return new WaitForSeconds(loopPause);
@@ -383,5 +419,27 @@ public class SWMTutorial : MonoBehaviour
         chest.chestVisual.transform.DOKill();
         chest.chestVisual.transform.localScale = Vector3.one;
         chest.chestVisual.sprite = chest.closedSprite;
+    }
+
+    private int GetTreasureChestIndex()
+    {
+        for (int i = 0; i < demoChests.Count; i++)
+        {
+            if (demoChests[i].hasTreasure)
+                return i;
+        }
+
+        return -1;
+    }
+
+    private int GetFirstEmptyChestIndex(int treasureChestIndex)
+    {
+        for (int i = 0; i < demoChests.Count; i++)
+        {
+            if (i != treasureChestIndex && demoChests[i].hasTreasure == false)
+                return i;
+        }
+
+        return -1;
     }
 }

@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BridgeConfig
   levels:
   - levelNumber: 1
-    trials: 5
+    trials: 3
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 3
-    maxPieces: 4
-    displayMs: 1200
-    gapMs: 300
+    minPieces: 2
+    maxPieces: 3
+    displayMs: 1500
+    gapMs: 400
     pattern: 0
     allowEnvironmentFX: 0
     wrongPatternMessagesFa:
@@ -50,13 +50,13 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 2
-    trials: 5
+    trials: 4
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 3
-    maxPieces: 4
-    displayMs: 1200
-    gapMs: 300
+    minPieces: 2
+    maxPieces: 3
+    displayMs: 1400
+    gapMs: 375
     pattern: 0
     allowEnvironmentFX: 0
     wrongPatternMessagesFa:
@@ -86,13 +86,13 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 3
-    trials: 6
+    trials: 4
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 4
-    maxPieces: 5
-    displayMs: 1000
-    gapMs: 300
+    minPieces: 3
+    maxPieces: 4
+    displayMs: 1300
+    gapMs: 350
     pattern: 1
     allowEnvironmentFX: 0
     wrongPatternMessagesFa:
@@ -122,13 +122,13 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 4
-    trials: 6
+    trials: 5
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 4
-    maxPieces: 5
-    displayMs: 1000
-    gapMs: 300
+    minPieces: 3
+    maxPieces: 4
+    displayMs: 1200
+    gapMs: 325
     pattern: 2
     allowEnvironmentFX: 0
     wrongPatternMessagesFa:
@@ -158,12 +158,12 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 5
-    trials: 7
+    trials: 5
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 5
-    maxPieces: 6
-    displayMs: 900
+    minPieces: 3
+    maxPieces: 4
+    displayMs: 1100
     gapMs: 300
     pattern: 3
     allowEnvironmentFX: 0
@@ -194,14 +194,14 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 6
-    trials: 7
+    trials: 5
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 6
-    maxPieces: 7
-    displayMs: 800
-    gapMs: 300
-    pattern: 4
+    minPieces: 4
+    maxPieces: 6
+    displayMs: 1000
+    gapMs: 275
+    pattern: 1
     allowEnvironmentFX: 1
     wrongPatternMessagesFa:
     - title: "\u0627\u0634\u062A\u0628\u0627\u0647 \u0634\u062F"
@@ -230,14 +230,14 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 7
-    trials: 8
+    trials: 6
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 7
-    maxPieces: 8
-    displayMs: 800
-    gapMs: 300
-    pattern: 4
+    minPieces: 4
+    maxPieces: 6
+    displayMs: 900
+    gapMs: 250
+    pattern: 2
     allowEnvironmentFX: 1
     wrongPatternMessagesFa:
     - title: "\u0627\u0634\u062A\u0628\u0627\u0647 \u0634\u062F"
@@ -266,15 +266,15 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 8
-    trials: 5
-    isGatewayLevel: 1
+    trials: 6
+    isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 3
-    maxPieces: 4
-    displayMs: 1200
-    gapMs: 300
-    pattern: 0
-    allowEnvironmentFX: 0
+    minPieces: 4
+    maxPieces: 6
+    displayMs: 800
+    gapMs: 225
+    pattern: 3
+    allowEnvironmentFX: 1
     wrongPatternMessagesFa:
     - title: "\u0627\u0634\u062A\u0628\u0627\u0647 \u0634\u062F"
       message: "\u0627\u06CC\u0646 \u06CC\u06A9\u06CC \u062F\u0631\u0633\u062A \u0646\u0628\u0648\u062F\u060C\u062F\u0648\u0628\u0627\u0631\u0647
@@ -302,15 +302,15 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 9
-    trials: 5
+    trials: 7
     isGatewayLevel: 0
     lockDurationHours: 0
-    minPieces: 3
-    maxPieces: 4
-    displayMs: 1200
-    gapMs: 300
-    pattern: 0
-    allowEnvironmentFX: 0
+    minPieces: 4
+    maxPieces: 6
+    displayMs: 700
+    gapMs: 200
+    pattern: 4
+    allowEnvironmentFX: 1
     wrongPatternMessagesFa:
     - title: "\u0627\u0634\u062A\u0628\u0627\u0647 \u0634\u062F"
       message: "\u0627\u06CC\u0646 \u06CC\u06A9\u06CC \u062F\u0631\u0633\u062A \u0646\u0628\u0648\u062F\u060C\u062F\u0648\u0628\u0627\u0631\u0647
@@ -338,15 +338,15 @@ MonoBehaviour:
     assistedPassInfoMessageFa: 
     levelUpInfoMessageFa: 
   - levelNumber: 10
-    trials: 6
-    isGatewayLevel: 0
+    trials: 8
+    isGatewayLevel: 1
     lockDurationHours: 0
-    minPieces: 4
-    maxPieces: 5
-    displayMs: 1000
-    gapMs: 300
-    pattern: 1
-    allowEnvironmentFX: 0
+    minPieces: 5
+    maxPieces: 8
+    displayMs: 600
+    gapMs: 175
+    pattern: 4
+    allowEnvironmentFX: 1
     wrongPatternMessagesFa:
     - title: "\u0627\u0634\u062A\u0628\u0627\u0647 \u0634\u062F"
       message: "\u0627\u06CC\u0646 \u06CC\u06A9\u06CC \u062F\u0631\u0633\u062A \u0646\u0628\u0648\u062F\u060C\u062F\u0648\u0628\u0627\u0631\u0647

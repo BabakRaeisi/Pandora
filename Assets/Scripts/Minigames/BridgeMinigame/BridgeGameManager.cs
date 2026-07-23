@@ -1,3 +1,4 @@
+// filepath: c:\Users\USER\Desktop\Mahoor\PandoraUnity\Pandora\Assets\Scripts\Minigames\BridgeMinigame\BridgeGameManager.cs
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,29 +18,30 @@ public class BridgeGameManager : MonoBehaviour
     [Header("Countdown")]
     [SerializeField] private RTLTextMeshPro countdownText;
 
-    [Header("UI Layout (Anchors)")]
-    [SerializeField] private RectTransform playArea;
-    [SerializeField] private RectTransform topChasmAnchor;
-    [SerializeField] private RectTransform bottomChasmAnchor;
-
-    [Header("Pieces (IDs 0..11, 2 columns)")]
+    [Header("Pieces")]
+    [Tooltip("Assign all stones here. Each stone needs a unique ID, starting at 0.")]
     [SerializeField] private List<BridgePieceUI> pieces = new();
 
-    [Header("Board")]
-    [SerializeField] private int cols = 2;
-    [SerializeField] private int totalRows = 6;
+    [Header("Logical Board")]
+    [Tooltip("Each group contains this many stones.")]
+    [SerializeField, Range(2, 3)] private int cols = 3;
 
-    [Header("Placement")]
-    [SerializeField] private float columnGap = 260f;
-    [SerializeField] private float staggerX = 35f;
+    [Tooltip("Number of stone groups on the bridge.")]
+    [SerializeField, Range(3, 4)] private int totalRows = 4;
 
     [Header("Direction")]
     [SerializeField] private bool randomizeBottomToTop = true;
     [SerializeField, Range(0f, 1f)] private float bottomToTopChance = 0.5f;
 
+    [Tooltip("Chance that the next step stays in the current group of three stones.")]
+    [SerializeField, Range(0f, 1f)] private float repeatSameGroupChance = 0.4f;
+
     [Header("Flow")]
     [SerializeField, Min(0f)] private float autoNextTrialDelay = 0.9f;
     [SerializeField, Min(1)] private int assistedFailLimit = 3;
+
+    [Header("Runtime")]
+    [SerializeField] private int currentLevel;
 
     private const string SelectedLevelKey = "BridgeSelectedLevel";
 
@@ -52,7 +54,6 @@ public class BridgeGameManager : MonoBehaviour
     private bool tutorialStepCompleted;
     private bool tutorialOpened;
 
-    private int currentLevel;
     private int levelStartedAt;
     private BridgeConfig.LevelConfig levelCfg;
 
@@ -76,7 +77,9 @@ public class BridgeGameManager : MonoBehaviour
     private void Awake()
     {
         if (pieces == null || pieces.Count == 0)
-            pieces = new List<BridgePieceUI>(GetComponentsInChildren<BridgePieceUI>(true));
+            pieces = new List<BridgePieceUI>(
+                GetComponentsInChildren<BridgePieceUI>(true)
+            );
 
         piecesById.Clear();
 
@@ -87,7 +90,9 @@ public class BridgeGameManager : MonoBehaviour
 
             if (piecesById.ContainsKey(piece.Id))
             {
-                Debug.LogError($"BridgeGameManager: Duplicate Id={piece.Id} on '{piece.name}'.");
+                Debug.LogError(
+                    $"[BridgeGameManager] Duplicate BridgePieceUI ID {piece.Id} on '{piece.name}'."
+                );
                 continue;
             }
 
@@ -95,6 +100,7 @@ public class BridgeGameManager : MonoBehaviour
 
             int row = piece.Id / cols;
             int column = piece.Id % cols;
+
             piece.SetGrid(row, column);
 
             piece.Clicked -= OnPiecePressed;
@@ -106,6 +112,7 @@ public class BridgeGameManager : MonoBehaviour
         if (introductionManager != null)
         {
             introductionManager.SetAllowedForCurrentLevel(isStartingLevelOne);
+
             introductionManager.IntroductionCompleted -= HandleIntroductionCompleted;
             introductionManager.IntroductionCompleted += HandleIntroductionCompleted;
 
@@ -127,7 +134,6 @@ public class BridgeGameManager : MonoBehaviour
             bridgeTutorial.TutorialCompleted -= HandleTutorialCompleted;
             bridgeTutorial.TutorialCompleted += HandleTutorialCompleted;
 
-            // It is enabled only after the introduction completes.
             bridgeTutorial.enabled = false;
         }
         else
@@ -177,11 +183,9 @@ public class BridgeGameManager : MonoBehaviour
         if (!bootstrapRequested || gameplayBootstrapped)
             return;
 
-        // Level 1: Introduction -> Tutorial -> Countdown.
         if (!introStepCompleted || !tutorialStepCompleted)
             return;
 
-        // Level 2+: both are already complete, so countdown begins.
         StartGameplayIfNeeded();
     }
 
@@ -204,7 +208,6 @@ public class BridgeGameManager : MonoBehaviour
 
     private IEnumerator OpenTutorialAfterIntroduction()
     {
-        // Allows BridgeTutorial OnEnable/Start initialization to complete.
         yield return null;
 
         if (gameplayBootstrapped ||
@@ -226,7 +229,6 @@ public class BridgeGameManager : MonoBehaviour
 
         tutorialOpened = false;
 
-        // Only the automatic level-1 tutorial releases the countdown.
         if (!tutorialStepCompleted)
         {
             tutorialStepCompleted = true;
@@ -234,13 +236,11 @@ public class BridgeGameManager : MonoBehaviour
         }
     }
 
-    // Optional target for the tutorial's final button.
     public void OnTutorialCompleted()
     {
         HandleTutorialCompleted();
     }
 
-    // Assign this to the in-game "How To Play" button.
     public void ShowHowToPlay()
     {
         if (bridgeTutorial == null || tutorialOpened)
@@ -278,8 +278,16 @@ public class BridgeGameManager : MonoBehaviour
             ProgressionManager.MAX_LEVEL
         );
 
-        int requestedLevel = PlayerPrefs.GetInt(SelectedLevelKey, unlockedLevel);
-        int startLevel = Mathf.Clamp(requestedLevel, 1, unlockedLevel);
+        int requestedLevel = PlayerPrefs.GetInt(
+            SelectedLevelKey,
+            unlockedLevel
+        );
+
+        int startLevel = Mathf.Clamp(
+            requestedLevel,
+            1,
+            unlockedLevel
+        );
 
         PlayerPrefs.DeleteKey(SelectedLevelKey);
 
@@ -310,12 +318,19 @@ public class BridgeGameManager : MonoBehaviour
             return;
         }
 
-        currentLevel = Mathf.Clamp(levelNumber, 1, ProgressionManager.MAX_LEVEL);
+        currentLevel = Mathf.Clamp(
+            levelNumber,
+            1,
+            ProgressionManager.MAX_LEVEL
+        );
+
         levelCfg = config.GetLevel(currentLevel);
 
         if (levelCfg.levelNumber == 0)
         {
-            Debug.LogError($"[BridgeGameManager] Missing LevelConfig for level {currentLevel}");
+            Debug.LogError(
+                $"[BridgeGameManager] Missing LevelConfig for level {currentLevel}."
+            );
             return;
         }
 
@@ -346,45 +361,38 @@ public class BridgeGameManager : MonoBehaviour
         builtCount = 0;
         wrongAttempts = 0;
 
-        activeRows = Mathf.Clamp(levelCfg.minPieces, 2, totalRows);
+        activeRows = Mathf.Clamp(totalRows, 3, 4);
 
-        if (levelCfg.pattern == BridgeConfig.BridgePattern.ZigZag)
-        {
-            goalPieces = Mathf.Clamp(levelCfg.maxPieces, activeRows + 1, activeRows * 2);
-        }
-        else
-        {
-            int minLength = Mathf.Max(levelCfg.minPieces, activeRows);
-            int maxLength = Mathf.Min(levelCfg.maxPieces, activeRows * 2);
-            goalPieces = UnityEngine.Random.Range(minLength, maxLength + 1);
-        }
+        int minimumSteps = Mathf.Max(1, levelCfg.minPieces);
+        int maximumSteps = Mathf.Max(minimumSteps, levelCfg.maxPieces);
 
-        ApplyActiveSpan(activeRows);
-        LayoutActiveSpanConnectingChasms(activeRows);
-
-        bool startFromBottom = randomizeBottomToTop &&
-            UnityEngine.Random.value < bottomToTopChance;
-
-        bool forceSwitch = levelCfg.pattern == BridgeConfig.BridgePattern.ZigZag;
-
-        targetSequence = BridgePathGenerator.Generate2ColPath(
-            activeRows,
-            goalPieces,
-            startFromBottom,
-            forceSwitch,
-            3000
+        goalPieces = UnityEngine.Random.Range(
+            minimumSteps,
+            maximumSteps + 1
         );
 
-        if (targetSequence == null || targetSequence.Count == 0)
+        bool startFromBottom =
+            randomizeBottomToTop &&
+            UnityEngine.Random.value < bottomToTopChance;
+
+        targetSequence = GenerateGroupedSequence(
+            activeRows,
+            goalPieces,
+            startFromBottom
+        );
+
+        if (targetSequence.Count != goalPieces)
         {
-            Debug.LogError($"[Bridge] Failed to generate path for level {currentLevel}");
+            Debug.LogError(
+                $"[BridgeGameManager] Could not create a {goalPieces}-step sequence."
+            );
             return;
         }
 
-        hud?.SetupTrial();
-        ResetActivePiecesToIdle();
+        ResetAllPiecesToIdle();
         SetInputEnabled(false);
 
+        hud?.SetupTrial();
         presentThenConstructRoutine = StartCoroutine(PresentThenConstruct());
     }
 
@@ -398,7 +406,7 @@ public class BridgeGameManager : MonoBehaviour
         wrongAttempts = 0;
 
         hud?.SetupTrial();
-        ResetActivePiecesToIdle();
+        ResetAllPiecesToIdle();
         SetInputEnabled(false);
 
         presentThenConstructRoutine = StartCoroutine(PresentThenConstruct());
@@ -419,112 +427,19 @@ public class BridgeGameManager : MonoBehaviour
         }
     }
 
-    private void ApplyActiveSpan(int spanRows)
-    {
-        foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
-        {
-            BridgePieceUI piece = pair.Value;
-
-            if (!piece)
-                continue;
-
-            int row = pair.Key / cols;
-            piece.gameObject.SetActive(row >= 0 && row < spanRows);
-        }
-    }
-
-    private void LayoutActiveSpanConnectingChasms(int spanRows)
-    {
-        if (!playArea)
-            return;
-
-        float leftX = -columnGap * 0.5f;
-        float rightX = columnGap * 0.5f;
-        float topY;
-        float bottomY;
-
-        if (topChasmAnchor && bottomChasmAnchor)
-        {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                playArea,
-                RectTransformUtility.WorldToScreenPoint(null, topChasmAnchor.position),
-                null,
-                out Vector2 localTop
-            );
-
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                playArea,
-                RectTransformUtility.WorldToScreenPoint(null, bottomChasmAnchor.position),
-                null,
-                out Vector2 localBottom
-            );
-
-            topY = localTop.y;
-            bottomY = localBottom.y;
-
-            if (topY < bottomY)
-                (topY, bottomY) = (bottomY, topY);
-        }
-        else
-        {
-            Rect rect = playArea.rect;
-            topY = rect.height * 0.5f - 140f;
-            bottomY = -rect.height * 0.5f + 140f;
-        }
-
-        float spanHeight = Mathf.Max(10f, topY - bottomY);
-        float rowStep = spanRows <= 1 ? 0f : spanHeight / (spanRows - 1);
-
-        for (int id = 0; id < totalRows * cols; id++)
-        {
-            if (!piecesById.TryGetValue(id, out BridgePieceUI piece) ||
-                !piece ||
-                !piece.gameObject.activeInHierarchy)
-            {
-                continue;
-            }
-
-            int row = id / cols;
-            int column = id % cols;
-
-            if (row < 0 || row >= spanRows)
-                continue;
-
-            RectTransform pieceRect = piece.GetComponent<RectTransform>();
-
-            if (!pieceRect)
-                continue;
-
-            if (pieceRect.parent != playArea)
-                pieceRect.SetParent(playArea, false);
-
-            pieceRect.anchorMin = new Vector2(0.5f, 0.5f);
-            pieceRect.anchorMax = new Vector2(0.5f, 0.5f);
-            pieceRect.pivot = new Vector2(0.5f, 0.5f);
-
-            float y = topY - row * rowStep;
-            float x = column == 0 ? leftX : rightX;
-            x += row % 2 == 0 ? -staggerX : staggerX;
-
-            pieceRect.anchoredPosition = new Vector2(x, y);
-        }
-    }
-
     private IEnumerator PresentThenConstruct()
     {
         foreach (int id in targetSequence)
         {
-            if (!piecesById.TryGetValue(id, out BridgePieceUI piece) ||
-                !piece ||
-                !piece.gameObject.activeInHierarchy)
-            {
+            if (!piecesById.TryGetValue(id, out BridgePieceUI piece) || !piece)
                 continue;
-            }
 
             piece.SetState(BridgePieceState.Highlighted);
+
             yield return new WaitForSeconds(levelCfg.displayMs / 1000f);
 
             piece.SetState(BridgePieceState.Idle);
+
             yield return new WaitForSeconds(levelCfg.gapMs / 1000f);
         }
 
@@ -538,7 +453,6 @@ public class BridgeGameManager : MonoBehaviour
         if (!inputEnabled ||
             trialComplete ||
             !piece ||
-            !piece.gameObject.activeInHierarchy ||
             builtCount < 0 ||
             builtCount >= targetSequence.Count)
         {
@@ -551,6 +465,7 @@ public class BridgeGameManager : MonoBehaviour
         {
             builtCount++;
             piece.SetState(BridgePieceState.Built);
+
             AudioManager.Instance.Play("StoneCorrectStep");
 
             if (builtCount >= goalPieces)
@@ -592,7 +507,7 @@ public class BridgeGameManager : MonoBehaviour
         trialComplete = false;
         builtCount = 0;
 
-        ResetActivePiecesToIdle();
+        ResetAllPiecesToIdle();
         hud?.SetupTrial();
 
         presentThenConstructRoutine = StartCoroutine(PresentThenConstruct());
@@ -607,7 +522,9 @@ public class BridgeGameManager : MonoBehaviour
         inputEnabled = false;
         SetInputEnabled(false);
 
-        int completionMs = Mathf.RoundToInt((Time.time - trialStartTime) * 1000f);
+        int completionMs = Mathf.RoundToInt(
+            (Time.time - trialStartTime) * 1000f
+        );
 
         var result = ProgressionManager.Instance.EvaluateTrial(
             "Bridge",
@@ -618,7 +535,13 @@ public class BridgeGameManager : MonoBehaviour
             consecutiveFailsOnLevel
         );
 
-        RecordTrial("Bridge", result, !assisted, wrongAttempts, completionMs);
+        RecordTrial(
+            "Bridge",
+            result,
+            !assisted,
+            wrongAttempts,
+            completionMs
+        );
 
         trialsCompleteInLevel++;
         hud?.SetTrialsDone(trialsCompleteInLevel);
@@ -632,7 +555,11 @@ public class BridgeGameManager : MonoBehaviour
         if (!assisted)
         {
             var success = config.GetRandomTrialSuccess(levelCfg);
-            feedbackMessanger?.ShowSuccess(config.GetSuccessTitle(levelCfg), success.message);
+
+            feedbackMessanger?.ShowSuccess(
+                config.GetSuccessTitle(levelCfg),
+                success.message
+            );
         }
 
         consecutiveFailsOnLevel = 0;
@@ -647,20 +574,35 @@ public class BridgeGameManager : MonoBehaviour
 
     private void CompleteLevelAfterTrials(bool assistedLevelCompletion)
     {
-        int completionMs = Mathf.RoundToInt((Time.time - levelStartTime) * 1000f);
-        float averageSpan = (levelCfg.minPieces + levelCfg.maxPieces) * 0.5f;
+        int completionMs = Mathf.RoundToInt(
+            (Time.time - levelStartTime) * 1000f
+        );
+
+        float averageSpan =
+            (levelCfg.minPieces + levelCfg.maxPieces) * 0.5f;
 
         var result = ProgressionManager.Instance.EvaluateTrial(
             "Bridge",
             !assistedLevelCompletion,
-            assistedLevelCompletion ? assistedFailLimit : consecutiveFailsOnLevel,
+            assistedLevelCompletion
+                ? assistedFailLimit
+                : consecutiveFailsOnLevel,
             completionMs,
             Mathf.RoundToInt(averageSpan),
-            assistedLevelCompletion ? assistedFailLimit : 0
+            assistedLevelCompletion
+                ? assistedFailLimit
+                : 0
         );
 
         var data = PlayerDataManager.Instance.Data;
-        bool completedCurrentUnlockedLevel = levelStartedAt == data.bridgeLevel;
+
+        bool completedCurrentUnlockedLevel =
+            levelStartedAt == data.bridgeLevel;
+
+        bool passedBridgeGateway =
+            completedCurrentUnlockedLevel &&
+            !assistedLevelCompletion &&
+            config.IsGatewayLevel(levelCfg);
 
         if (completedCurrentUnlockedLevel)
         {
@@ -673,9 +615,7 @@ public class BridgeGameManager : MonoBehaviour
 
             data.bridgeLevel = Mathf.Max(data.bridgeLevel, nextLevel);
 
-            // Completing Bridge's gateway, including an assisted pass,
-            // awards its key and unlocks the next minigame.
-            if (config.IsGatewayLevel(levelCfg))
+            if (passedBridgeGateway)
             {
                 data.bridgeGateReached = true;
                 data.swmUnlocked = true;
@@ -684,17 +624,13 @@ public class BridgeGameManager : MonoBehaviour
             PlayerDataManager.Instance.Save();
         }
 
-        bool showKey =
-            completedCurrentUnlockedLevel &&
-            config.IsGatewayLevel(levelCfg);
-
         feedbackMessanger?.ShowOutcomePanel(
             string.Empty,
             assistedLevelCompletion
                 ? config.GetRandomAssistedPassMessage()
                 : config.GetFinalSuccessMessage(levelCfg),
             assistedLevelCompletion,
-            showKey
+            passedBridgeGateway
         );
 
         hud?.ShowDayComplete();
@@ -731,14 +667,12 @@ public class BridgeGameManager : MonoBehaviour
         trialIndexInLevel++;
     }
 
-    private void ResetActivePiecesToIdle()
+    private void ResetAllPiecesToIdle()
     {
         foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
         {
-            BridgePieceUI piece = pair.Value;
-
-            if (piece && piece.gameObject.activeInHierarchy)
-                piece.SetState(BridgePieceState.Idle);
+            if (pair.Value != null)
+                pair.Value.SetState(BridgePieceState.Idle);
         }
     }
 
@@ -746,10 +680,8 @@ public class BridgeGameManager : MonoBehaviour
     {
         foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
         {
-            BridgePieceUI piece = pair.Value;
-
-            if (piece && piece.gameObject.activeInHierarchy)
-                piece.SetInteractable(enabled);
+            if (pair.Value != null)
+                pair.Value.SetInteractable(enabled);
         }
     }
 
@@ -763,7 +695,129 @@ public class BridgeGameManager : MonoBehaviour
             ProgressionManager.MAX_LEVEL
         );
 
-        int requestedLevel = PlayerPrefs.GetInt(SelectedLevelKey, unlockedLevel);
+        int requestedLevel = PlayerPrefs.GetInt(
+            SelectedLevelKey,
+            unlockedLevel
+        );
+
         return Mathf.Clamp(requestedLevel, 1, unlockedLevel);
     }
+
+    private int GetRow(int id)
+    {
+        return id / cols;
+    }
+
+    private List<int> GenerateGroupedSequence(
+        int rowCount,
+        int stepCount,
+        bool startFromBottom)
+    {
+        List<int> sequence = new();
+
+        if (rowCount <= 0 || stepCount <= 0)
+            return sequence;
+
+        // Build groups in gameplay order:
+        // top -> bottom, or bottom -> top.
+        List<List<int>> orderedGroups = new();
+
+        for (int orderIndex = 0; orderIndex < rowCount; orderIndex++)
+        {
+            int row = startFromBottom
+                ? rowCount - 1 - orderIndex
+                : orderIndex;
+
+            List<int> group = new();
+
+            foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
+            {
+                if (pair.Value != null && GetRow(pair.Key) == row)
+                    group.Add(pair.Key);
+            }
+
+            if (group.Count == 0)
+            {
+                Debug.LogError(
+                    $"[BridgeGameManager] Group/row {row} has no assigned stones."
+                );
+                return sequence;
+            }
+
+            orderedGroups.Add(group);
+        }
+
+        int totalAvailableStones = 0;
+
+        for (int i = 0; i < orderedGroups.Count; i++)
+            totalAvailableStones += orderedGroups[i].Count;
+
+        // To travel through all groups in order, every group needs one stone.
+        stepCount = Mathf.Max(stepCount, rowCount);
+
+        // A stone may never be used twice in the same trial.
+        stepCount = Mathf.Min(stepCount, totalAvailableStones);
+
+        // Start with one stone from every group:
+        // Group 1 -> Group 2 -> Group 3 -> Group 4.
+        int[] selectionsPerGroup = new int[rowCount];
+
+        for (int i = 0; i < rowCount; i++)
+            selectionsPerGroup[i] = 1;
+
+        int remainingSteps = stepCount - rowCount;
+
+        // Add remaining steps to random groups which still have unused stones.
+        // This allows: group 1 -> group 1 -> group 2 -> group 3 -> group 3 -> group 4.
+        while (remainingSteps > 0)
+        {
+            List<int> groupsWithCapacity = new();
+
+            for (int groupIndex = 0; groupIndex < orderedGroups.Count; groupIndex++)
+            {
+                if (selectionsPerGroup[groupIndex] < orderedGroups[groupIndex].Count)
+                    groupsWithCapacity.Add(groupIndex);
+            }
+
+            if (groupsWithCapacity.Count == 0)
+                break;
+
+            int selectedGroupIndex = groupsWithCapacity[
+                UnityEngine.Random.Range(0, groupsWithCapacity.Count)
+            ];
+
+            selectionsPerGroup[selectedGroupIndex]++;
+            remainingSteps--;
+        }
+
+        // Pick unique stones from each group. Groups are processed in order,
+        // so it can never jump from group 1 directly to group 3.
+        for (int groupIndex = 0; groupIndex < orderedGroups.Count; groupIndex++)
+        {
+            List<int> availableStones = new List<int>(
+                orderedGroups[groupIndex]
+            );
+
+            int stonesToPick = selectionsPerGroup[groupIndex];
+
+            for (int pickIndex = 0; pickIndex < stonesToPick; pickIndex++)
+            {
+                int randomIndex = UnityEngine.Random.Range(
+                    0,
+                    availableStones.Count
+                );
+
+                int selectedStone = availableStones[randomIndex];
+
+                sequence.Add(selectedStone);
+
+                // Remove it so this stone cannot appear twice in this trial.
+                availableStones.RemoveAt(randomIndex);
+            }
+        }
+
+        return sequence;
+    }
 }
+
+

@@ -39,25 +39,7 @@ public class SWMConfig : ScriptableObject
         [TextArea] public string levelUpInfoMessageFa;
     }
 
-    public LevelConfig[] levels =
-    {
-        new LevelConfig { levelNumber = 1, boxes = 3, treasures = 2, trials = 5, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 2, boxes = 4, treasures = 2, trials = 5, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 3, boxes = 4, treasures = 3, trials = 6, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 4, boxes = 6, treasures = 3, trials = 6, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 5, boxes = 6, treasures = 4, trials = 7, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 6, boxes = 6, treasures = 4, trials = 7, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 7, boxes = 8, treasures = 4, trials = 8, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 8, boxes = 3, treasures = 2, trials = 5, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 9, boxes = 4, treasures = 2, trials = 5, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 10, boxes = 4, treasures = 3, trials = 6, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 11, boxes = 6, treasures = 3, trials = 6, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 12, boxes = 6, treasures = 4, trials = 7, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 13, boxes = 6, treasures = 4, trials = 7, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 14, boxes = 8, treasures = 4, trials = 8, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 15, boxes = 3, treasures = 2, trials = 5, successTitleFa = "آفرین" },
-        new LevelConfig { levelNumber = 16, boxes = 4, treasures = 2, trials = 5, successTitleFa = "آفرین" }
-    };
+    public LevelConfig[] levels = CreateDefaultLevels();
 
     private static readonly TitledMessageFa[] DefaultWrongPatternMessagesFa =
     {
@@ -122,31 +104,33 @@ public class SWMConfig : ScriptableObject
 
     private void OnValidate()
     {
-        if (levels != null)
+        // Existing ScriptableObject assets retain serialized empty arrays.
+        // Restore all preset levels when this asset's list is empty.
+        if (levels == null || levels.Length == 0)
+            levels = CreateDefaultLevels();
+
+        for (int i = 0; i < levels.Length; i++)
         {
-            for (int i = 0; i < levels.Length; i++)
+            LevelConfig level = levels[i];
+
+            if (string.IsNullOrWhiteSpace(level.successTitleFa))
+                level.successTitleFa = "آفرین";
+
+            if (level.wrongPatternMessagesFa == null ||
+                level.wrongPatternMessagesFa.Length == 0)
             {
-                LevelConfig level = levels[i];
-
-                if (string.IsNullOrWhiteSpace(level.successTitleFa))
-                    level.successTitleFa = "آفرین";
-
-                if (level.wrongPatternMessagesFa == null ||
-                    level.wrongPatternMessagesFa.Length == 0)
-                {
-                    level.wrongPatternMessagesFa =
-                        (TitledMessageFa[])DefaultWrongPatternMessagesFa.Clone();
-                }
-
-                if (level.trialSuccessMessagesFa == null ||
-                    level.trialSuccessMessagesFa.Length == 0)
-                {
-                    level.trialSuccessMessagesFa =
-                        (TitledMessageFa[])DefaultTrialSuccessMessagesFa.Clone();
-                }
-
-                levels[i] = level;
+                level.wrongPatternMessagesFa =
+                    (TitledMessageFa[])DefaultWrongPatternMessagesFa.Clone();
             }
+
+            if (level.trialSuccessMessagesFa == null ||
+                level.trialSuccessMessagesFa.Length == 0)
+            {
+                level.trialSuccessMessagesFa =
+                    (TitledMessageFa[])DefaultTrialSuccessMessagesFa.Clone();
+            }
+
+            levels[i] = level;
         }
 
         if (levelSuccessMessagesFa == null || levelSuccessMessagesFa.Length == 0)
@@ -312,5 +296,36 @@ public class SWMConfig : ScriptableObject
         {
             return string.Format(fallback, args);
         }
+    }
+
+    public static LevelConfig[] CreateDefaultLevels()
+    {
+        // One treasure is placed in one chest per trial.
+        // Difficulty increases through the number of possible chest locations
+        // and the number of trials required to complete the level.
+        return new[]
+        {
+            new LevelConfig { levelNumber = 1,  boxes = 3,  treasures = 1, trials = 4,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 2,  boxes = 3,  treasures = 1, trials = 5,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 3,  boxes = 4,  treasures = 1, trials = 5,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 4,  boxes = 4,  treasures = 1, trials = 6,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 5,  boxes = 5,  treasures = 1, trials = 6,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 6,  boxes = 5,  treasures = 1, trials = 7,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 7,  boxes = 6,  treasures = 1, trials = 7,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 8,  boxes = 7,  treasures = 1, trials = 7,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 9,  boxes = 7,  treasures = 1, trials = 8,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 10, boxes = 8,  treasures = 1, trials = 8,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 11, boxes = 9,  treasures = 1, trials = 8,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 12, boxes = 9,  treasures = 1, trials = 9,  successTitleFa = "آفرین" },
+
+            new LevelConfig { levelNumber = 13, boxes = 10, treasures = 1, trials = 9,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 14, boxes = 10, treasures = 1, trials = 10, successTitleFa = "آفرین", isGatewayLevel = true }
+ 
+        };
     }
 }

@@ -3076,6 +3076,8 @@ MonoBehaviour:
   unlockedBottom: {r: 1, g: 1, b: 1, a: 1}
   lockedTop: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   lockedBottom: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+  backgroundImage: {fileID: 1506463083}
+  gatewayPassedBackground: {fileID: 8556413482856080231, guid: 12f413990fdff3f4898bc2416a9547af, type: 3}
 --- !u!114 &1535900645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3118,6 +3120,8 @@ MonoBehaviour:
   unlockedBottom: {r: 1, g: 1, b: 1, a: 1}
   lockedTop: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   lockedBottom: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+  backgroundImage: {fileID: 1506463083}
+  gatewayPassedBackground: {fileID: 8556413482856080231, guid: 12f413990fdff3f4898bc2416a9547af, type: 3}
 --- !u!114 &1535900646
 MonoBehaviour:
   m_ObjectHideFlags: 0

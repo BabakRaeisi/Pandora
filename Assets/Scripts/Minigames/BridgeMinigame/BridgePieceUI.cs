@@ -118,19 +118,15 @@ public class BridgePieceUI : MonoBehaviour
 
     private void ApplyVisual(BridgePieceState state)
     {
-        Sprite s = baseSprite;
+        // Idle stones use baseSprite: assign the underwater stone sprite here.
+        Sprite sprite = baseSprite;
 
         if (state == BridgePieceState.Highlighted && highlightedSprite)
-            s = highlightedSprite;
-
+            sprite = highlightedSprite;
         else if (state == BridgePieceState.Built && builtSprite)
-            s = builtSprite;
+            sprite = builtSprite;
 
-        // For Error → just keep base (or you can add error sprite later)
-
-        image.sprite = s;
-
-        // ALWAYS fully visible, no tinting
+        image.sprite = sprite;
         image.color = Color.white;
     }
 }

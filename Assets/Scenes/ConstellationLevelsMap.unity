@@ -3160,6 +3160,8 @@ MonoBehaviour:
   unlockedBottom: {r: 1, g: 1, b: 1, a: 1}
   lockedTop: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   lockedBottom: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+  backgroundImage: {fileID: 1506463083}
+  gatewayPassedBackground: {fileID: -1437454964535531000, guid: c8b7ccb1ba3a9154fbd78534af731fa8, type: 3}
 --- !u!1 &1536693681
 GameObject:
   m_ObjectHideFlags: 0

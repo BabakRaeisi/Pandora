@@ -46,25 +46,7 @@ public class BridgeConfig : ScriptableObject
         [TextArea] public string levelUpInfoMessageFa;
     }
 
-    public LevelConfig[] levels = new LevelConfig[]
-    {
-        new LevelConfig { levelNumber=1, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=2, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=3, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.GentleCurve, allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=4, trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.ZigZag,      allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=5, trials=7, minPieces=5, maxPieces=6, displayMs=900,  gapMs=300, pattern=BridgePattern.LShape,      allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=6, trials=7, minPieces=6, maxPieces=7, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,    allowEnvironmentFX=true,  successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=7, trials=8, minPieces=7, maxPieces=8, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,    allowEnvironmentFX=true,  successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=8, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=9, trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=10,trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.GentleCurve, allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=11,trials=6, minPieces=4, maxPieces=5, displayMs=1000, gapMs=300, pattern=BridgePattern.ZigZag,      allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=12,trials=7, minPieces=5, maxPieces=6, displayMs=900,  gapMs=300, pattern=BridgePattern.LShape,      allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=13,trials=7, minPieces=6, maxPieces=7, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,    allowEnvironmentFX=true,  successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=14,trials=8, minPieces=7, maxPieces=8, displayMs=800,  gapMs=300, pattern=BridgePattern.Elevated,    allowEnvironmentFX=true,  successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=15,trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-        new LevelConfig { levelNumber=16,trials=5, minPieces=3, maxPieces=4, displayMs=1200, gapMs=300, pattern=BridgePattern.Straight,    allowEnvironmentFX=false, successTitleFa="آفرین" },
-    };
+    public LevelConfig[] levels = CreateDefaultLevels();
 
     private static readonly TitledMessageFa[] DefaultWrongPatternMessagesFa = new TitledMessageFa[]
     {
@@ -103,23 +85,27 @@ public class BridgeConfig : ScriptableObject
 
     private void OnValidate()
     {
-        if (levels != null)
+        // Existing ScriptableObject assets keep their serialized values.
+        // Restore the default 10 levels if this asset has an empty list.
+        if (levels == null || levels.Length == 0)
         {
-            for (int i = 0; i < levels.Length; i++)
-            {
-                var lv = levels[i];
+            levels = CreateDefaultLevels();
+        }
 
-                if (string.IsNullOrWhiteSpace(lv.successTitleFa))
-                    lv.successTitleFa = "آفرین";
+        for (int i = 0; i < levels.Length; i++)
+        {
+            var lv = levels[i];
 
-                if (lv.wrongPatternMessagesFa == null || lv.wrongPatternMessagesFa.Length == 0)
-                    lv.wrongPatternMessagesFa = (TitledMessageFa[])DefaultWrongPatternMessagesFa.Clone();
+            if (string.IsNullOrWhiteSpace(lv.successTitleFa))
+                lv.successTitleFa = "آفرین";
 
-                if (lv.trialSuccessMessagesFa == null || lv.trialSuccessMessagesFa.Length == 0)
-                    lv.trialSuccessMessagesFa = (TitledMessageFa[])DefaultTrialSuccessMessagesFa.Clone();
+            if (lv.wrongPatternMessagesFa == null || lv.wrongPatternMessagesFa.Length == 0)
+                lv.wrongPatternMessagesFa = (TitledMessageFa[])DefaultWrongPatternMessagesFa.Clone();
 
-                levels[i] = lv; // struct write-back
-            }
+            if (lv.trialSuccessMessagesFa == null || lv.trialSuccessMessagesFa.Length == 0)
+                lv.trialSuccessMessagesFa = (TitledMessageFa[])DefaultTrialSuccessMessagesFa.Clone();
+
+            levels[i] = lv;
         }
 
         if (levelSuccessMessagesFa == null || levelSuccessMessagesFa.Length == 0)
@@ -131,8 +117,10 @@ public class BridgeConfig : ScriptableObject
 
     public LevelConfig GetLevel(int levelNumber)
     {
-        if (levels == null || levels.Length == 0) return default;
-        levelNumber = Mathf.Clamp(levelNumber, 1, 16);
+        if (levels == null || levels.Length == 0)
+            return default;
+
+        levelNumber = Mathf.Clamp(levelNumber, 1, levels.Length);
 
         for (int i = 0; i < levels.Length; i++)
             if (levels[i].levelNumber == levelNumber) return levels[i];
@@ -231,5 +219,33 @@ public class BridgeConfig : ScriptableObject
         ZigZag,
         LShape,
         Elevated
+    }
+
+    private static LevelConfig[] CreateDefaultLevels()
+    {
+        return new[]
+        {
+            // Steps 2-3.
+            new LevelConfig { levelNumber = 1,  trials = 3, minPieces = 2,  maxPieces = 2,  displayMs = 1500, gapMs = 400, pattern = BridgePattern.Straight,    allowEnvironmentFX = false, successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 2,  trials = 3, minPieces = 2,  maxPieces = 3,  displayMs = 1450, gapMs = 380, pattern = BridgePattern.Straight,    allowEnvironmentFX = false, successTitleFa = "آفرین" },
+
+            // Steps 3-5.
+            new LevelConfig { levelNumber = 3,  trials = 4, minPieces = 3,  maxPieces = 4,  displayMs = 1350, gapMs = 350, pattern = BridgePattern.GentleCurve, allowEnvironmentFX = false, successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 4,  trials = 4, minPieces = 4,  maxPieces = 5,  displayMs = 1250, gapMs = 325, pattern = BridgePattern.ZigZag,      allowEnvironmentFX = false, successTitleFa = "آفرین" },
+
+            // Steps 5-6.
+            new LevelConfig { levelNumber = 5,  trials = 5, minPieces = 5,  maxPieces = 6,  displayMs = 1150, gapMs = 300, pattern = BridgePattern.LShape,      allowEnvironmentFX = false, successTitleFa = "آفرین", isGatewayLevel = true },
+
+            // Steps 6-8.
+            new LevelConfig { levelNumber = 6,  trials = 5, minPieces = 6,  maxPieces = 7,  displayMs = 1050, gapMs = 275, pattern = BridgePattern.GentleCurve, allowEnvironmentFX = true,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 7,  trials = 6, minPieces = 7,  maxPieces = 8,  displayMs = 950,  gapMs = 250, pattern = BridgePattern.ZigZag,      allowEnvironmentFX = true,  successTitleFa = "آفرین" },
+
+            // Steps 8-10.
+            new LevelConfig { levelNumber = 8,  trials = 6, minPieces = 8,  maxPieces = 9,  displayMs = 850,  gapMs = 225, pattern = BridgePattern.LShape,      allowEnvironmentFX = true,  successTitleFa = "آفرین" },
+            new LevelConfig { levelNumber = 9,  trials = 7, minPieces = 9,  maxPieces = 10, displayMs = 750,  gapMs = 200, pattern = BridgePattern.Elevated,    allowEnvironmentFX = true,  successTitleFa = "آفرین" },
+
+            // Steps 10-12.
+            new LevelConfig { levelNumber = 10, trials = 8, minPieces = 10, maxPieces = 12, displayMs = 650,  gapMs = 175, pattern = BridgePattern.Elevated,    allowEnvironmentFX = true,  successTitleFa = "آفرین", isGatewayLevel = true },
+        };
     }
 }
