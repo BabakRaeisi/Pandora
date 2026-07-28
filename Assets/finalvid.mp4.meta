@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 8a3e40272fb48a44ba0272562ee98e8b
+guid: 8c19aa9469443ca4d9522232c666ef98
 VideoClipImporter:
   externalObjects: {}
   serializedVersion: 3
@@ -20,8 +20,8 @@ VideoClipImporter:
       aspectRatio: 0
       customWidth: 720
       customHeight: 1280
-      bitrateMode: 2
-      spatialQuality: 2
+      bitrateMode: 1
+      spatialQuality: 1
     Android:
       enableTranscoding: 1
       codec: 1
@@ -29,8 +29,8 @@ VideoClipImporter:
       aspectRatio: 0
       customWidth: 720
       customHeight: 1280
-      bitrateMode: 2
-      spatialQuality: 2
+      bitrateMode: 1
+      spatialQuality: 1
     Standalone:
       enableTranscoding: 1
       codec: 1
@@ -38,8 +38,8 @@ VideoClipImporter:
       aspectRatio: 0
       customWidth: 720
       customHeight: 1280
-      bitrateMode: 2
-      spatialQuality: 2
+      bitrateMode: 1
+      spatialQuality: 1
   userData: 
   assetBundleName: 
   assetBundleVariant: 

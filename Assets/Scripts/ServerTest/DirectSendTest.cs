@@ -42,7 +42,7 @@ public class DirectSendTest : MonoBehaviour
         if (dataUploader == null)
         {
             lastResult = "FAIL — DataUploader not found in scene.";
-            Debug.LogError($"[DirectSendTest] {lastResult}");
+           
             yield break;
         }
 

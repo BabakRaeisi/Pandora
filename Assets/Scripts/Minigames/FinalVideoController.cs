@@ -64,12 +64,7 @@ public class FinalVideoController : MonoBehaviour
 
         if (videoAudioSource == null)
         {
-            Debug.LogWarning(
-                "[FinalVideoController] Assign a dedicated AudioSource to Video Audio. " +
-                "The VideoPlayer will use its default audio output.",
-                this
-            );
-
+         
             return;
         }
 

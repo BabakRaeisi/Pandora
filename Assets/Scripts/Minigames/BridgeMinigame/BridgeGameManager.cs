@@ -90,10 +90,7 @@ public class BridgeGameManager : MonoBehaviour
 
             if (piecesById.ContainsKey(piece.Id))
             {
-                Debug.LogError(
-                    $"[BridgeGameManager] Duplicate BridgePieceUI ID {piece.Id} on '{piece.name}'."
-                );
-                continue;
+                 continue;
             }
 
             piecesById.Add(piece.Id, piece);
@@ -314,7 +311,6 @@ public class BridgeGameManager : MonoBehaviour
     {
         if (!config || !sessionData)
         {
-            Debug.LogError("[BridgeGameManager] Missing config or sessionData.");
             return;
         }
 
@@ -328,9 +324,6 @@ public class BridgeGameManager : MonoBehaviour
 
         if (levelCfg.levelNumber == 0)
         {
-            Debug.LogError(
-                $"[BridgeGameManager] Missing LevelConfig for level {currentLevel}."
-            );
             return;
         }
 
@@ -363,31 +356,66 @@ public class BridgeGameManager : MonoBehaviour
 
         activeRows = Mathf.Clamp(totalRows, 3, 4);
 
+        // Build row lookup — only include rows within activeRows range
+        Dictionary<int, int> rowLookup = new Dictionary<int, int>();
+        foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
+        {
+            if (pair.Value == null) continue;
+
+            int pieceRow = pair.Key / cols;
+
+            // Only include pieces that fall within the active row range
+            if (pieceRow >= 0 && pieceRow < activeRows)
+                rowLookup[pair.Key] = pieceRow;
+        }
+
+        // Validate: every row 0..activeRows-1 must have at least one piece
+        bool rowsValid = true;
+        for (int r = 0; r < activeRows; r++)
+        {
+            bool found = false;
+            foreach (KeyValuePair<int, int> pair in rowLookup)
+            {
+                if (pair.Value == r) { found = true; break; }
+            }
+            if (!found)
+            {
+                rowsValid = false;
+            }
+        }
+
+        if (!rowsValid)
+        {
+            // Fallback: use only rows that actually exist
+            int maxRowFound = 0;
+            foreach (KeyValuePair<int, int> pair in rowLookup)
+                if (pair.Value > maxRowFound) maxRowFound = pair.Value;
+
+            activeRows = maxRowFound + 1;
+         }
+
         int minimumSteps = Mathf.Max(1, levelCfg.minPieces);
         int maximumSteps = Mathf.Max(minimumSteps, levelCfg.maxPieces);
+        int requestedSteps = UnityEngine.Random.Range(minimumSteps, maximumSteps + 1);
 
-        goalPieces = UnityEngine.Random.Range(
-            minimumSteps,
-            maximumSteps + 1
-        );
+        bool startFromBottom = randomizeBottomToTop &&
+                               UnityEngine.Random.value < bottomToTopChance;
 
-        bool startFromBottom =
-            randomizeBottomToTop &&
-            UnityEngine.Random.value < bottomToTopChance;
-
-        targetSequence = GenerateGroupedSequence(
+        targetSequence = BridgePathGenerator.GenerateGroupedSequence(
+            cols,
             activeRows,
-            goalPieces,
-            startFromBottom
+            requestedSteps,
+            startFromBottom,
+            rowLookup
         );
 
-        if (targetSequence.Count != goalPieces)
+        if (targetSequence == null || targetSequence.Count == 0)
         {
-            Debug.LogError(
-                $"[BridgeGameManager] Could not create a {goalPieces}-step sequence."
-            );
-            return;
+             return;
         }
+
+        // CRITICAL: always derive goalPieces from actual sequence, never from requestedSteps
+        goalPieces = targetSequence.Count;
 
         ResetAllPiecesToIdle();
         SetInputEnabled(false);
@@ -405,10 +433,18 @@ public class BridgeGameManager : MonoBehaviour
         builtCount = 0;
         wrongAttempts = 0;
 
-        hud?.SetupTrial();
+        if (targetSequence == null || targetSequence.Count == 0)
+        {
+            return;
+        }
+
+        // CRITICAL: re-derive goalPieces from existing sequence
+        goalPieces = targetSequence.Count;
+
         ResetAllPiecesToIdle();
         SetInputEnabled(false);
 
+        hud?.SetupTrial();
         presentThenConstructRoutine = StartCoroutine(PresentThenConstruct());
     }
 
@@ -601,7 +637,6 @@ public class BridgeGameManager : MonoBehaviour
 
         bool passedBridgeGateway =
             completedCurrentUnlockedLevel &&
-            !assistedLevelCompletion &&
             config.IsGatewayLevel(levelCfg);
 
         if (completedCurrentUnlockedLevel)
@@ -703,121 +738,7 @@ public class BridgeGameManager : MonoBehaviour
         return Mathf.Clamp(requestedLevel, 1, unlockedLevel);
     }
 
-    private int GetRow(int id)
-    {
-        return id / cols;
-    }
-
-    private List<int> GenerateGroupedSequence(
-        int rowCount,
-        int stepCount,
-        bool startFromBottom)
-    {
-        List<int> sequence = new();
-
-        if (rowCount <= 0 || stepCount <= 0)
-            return sequence;
-
-        // Build groups in gameplay order:
-        // top -> bottom, or bottom -> top.
-        List<List<int>> orderedGroups = new();
-
-        for (int orderIndex = 0; orderIndex < rowCount; orderIndex++)
-        {
-            int row = startFromBottom
-                ? rowCount - 1 - orderIndex
-                : orderIndex;
-
-            List<int> group = new();
-
-            foreach (KeyValuePair<int, BridgePieceUI> pair in piecesById)
-            {
-                if (pair.Value != null && GetRow(pair.Key) == row)
-                    group.Add(pair.Key);
-            }
-
-            if (group.Count == 0)
-            {
-                Debug.LogError(
-                    $"[BridgeGameManager] Group/row {row} has no assigned stones."
-                );
-                return sequence;
-            }
-
-            orderedGroups.Add(group);
-        }
-
-        int totalAvailableStones = 0;
-
-        for (int i = 0; i < orderedGroups.Count; i++)
-            totalAvailableStones += orderedGroups[i].Count;
-
-        // To travel through all groups in order, every group needs one stone.
-        stepCount = Mathf.Max(stepCount, rowCount);
-
-        // A stone may never be used twice in the same trial.
-        stepCount = Mathf.Min(stepCount, totalAvailableStones);
-
-        // Start with one stone from every group:
-        // Group 1 -> Group 2 -> Group 3 -> Group 4.
-        int[] selectionsPerGroup = new int[rowCount];
-
-        for (int i = 0; i < rowCount; i++)
-            selectionsPerGroup[i] = 1;
-
-        int remainingSteps = stepCount - rowCount;
-
-        // Add remaining steps to random groups which still have unused stones.
-        // This allows: group 1 -> group 1 -> group 2 -> group 3 -> group 3 -> group 4.
-        while (remainingSteps > 0)
-        {
-            List<int> groupsWithCapacity = new();
-
-            for (int groupIndex = 0; groupIndex < orderedGroups.Count; groupIndex++)
-            {
-                if (selectionsPerGroup[groupIndex] < orderedGroups[groupIndex].Count)
-                    groupsWithCapacity.Add(groupIndex);
-            }
-
-            if (groupsWithCapacity.Count == 0)
-                break;
-
-            int selectedGroupIndex = groupsWithCapacity[
-                UnityEngine.Random.Range(0, groupsWithCapacity.Count)
-            ];
-
-            selectionsPerGroup[selectedGroupIndex]++;
-            remainingSteps--;
-        }
-
-        // Pick unique stones from each group. Groups are processed in order,
-        // so it can never jump from group 1 directly to group 3.
-        for (int groupIndex = 0; groupIndex < orderedGroups.Count; groupIndex++)
-        {
-            List<int> availableStones = new List<int>(
-                orderedGroups[groupIndex]
-            );
-
-            int stonesToPick = selectionsPerGroup[groupIndex];
-
-            for (int pickIndex = 0; pickIndex < stonesToPick; pickIndex++)
-            {
-                int randomIndex = UnityEngine.Random.Range(
-                    0,
-                    availableStones.Count
-                );
-
-                int selectedStone = availableStones[randomIndex];
-
-                sequence.Add(selectedStone);
-
-                // Remove it so this stone cannot appear twice in this trial.
-                availableStones.RemoveAt(randomIndex);
-            }
-        }
-
-        return sequence;
-    }
+    
 }
 
 

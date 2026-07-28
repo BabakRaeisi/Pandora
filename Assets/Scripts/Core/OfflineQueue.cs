@@ -20,7 +20,7 @@ public class OfflineQueue : MonoBehaviour
         if (File.Exists(path))
             File.Delete(path);
 
-        Debug.Log("Offline queue cleared");
+     
     }
 
     void Awake()
@@ -47,7 +47,7 @@ public class OfflineQueue : MonoBehaviour
     {
         queue.Add(json);
         Save();
-        Debug.Log($"[OfflineQueue] Enqueued. Queue size: {queue.Count}");
+    
     }
 
     public bool HasPending() => queue.Count > 0;
@@ -73,7 +73,7 @@ public class OfflineQueue : MonoBehaviour
             string rawQueuedJson = queue[0];
             if (string.IsNullOrWhiteSpace(rawQueuedJson))
             {
-                Debug.LogError("[OfflineQueue] Found empty queue item. Removing it.");
+              
                 queue.RemoveAt(0);
                 Save();
                 isSending = false;
@@ -83,7 +83,7 @@ public class OfflineQueue : MonoBehaviour
             var request = JsonUtility.FromJson<SessionUploadRequest>(rawQueuedJson);
             if (request == null)
             {
-                Debug.LogError("[OfflineQueue] Failed to deserialize queued item. Removing invalid payload.");
+    
                 queue.RemoveAt(0);
                 Save();
                 isSending = false;
@@ -99,11 +99,11 @@ public class OfflineQueue : MonoBehaviour
             {
                 queue.RemoveAt(0);
                 Save();
-                Debug.Log("[OfflineQueue] Item sent successfully and removed from queue.");
+            
             }
             else
             {
-                Debug.LogWarning("[OfflineQueue] Retry failed, will try again in 5s.");
+       
             }
 
             isSending = false;

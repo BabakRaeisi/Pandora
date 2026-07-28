@@ -35,8 +35,7 @@ public class BridgeMapManager : MonoBehaviour
     {
         if (PlayerDataManager.Instance == null || PlayerDataManager.Instance.Data == null)
         {
-            Debug.LogError("[BridgeMapManager] PlayerDataManager or player data is missing.", this);
-            return;
+             return;
         }
 
         int totalLevels = GetTotalLevels();

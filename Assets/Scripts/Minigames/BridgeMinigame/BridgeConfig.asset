@@ -231,7 +231,7 @@ MonoBehaviour:
     levelUpInfoMessageFa: 
   - levelNumber: 7
     trials: 6
-    isGatewayLevel: 0
+    isGatewayLevel: 1
     lockDurationHours: 0
     minPieces: 4
     maxPieces: 6
@@ -339,7 +339,7 @@ MonoBehaviour:
     levelUpInfoMessageFa: 
   - levelNumber: 10
     trials: 8
-    isGatewayLevel: 1
+    isGatewayLevel: 0
     lockDurationHours: 0
     minPieces: 5
     maxPieces: 8

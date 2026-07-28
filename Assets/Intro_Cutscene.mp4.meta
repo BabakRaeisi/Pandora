@@ -15,22 +15,22 @@ VideoClipImporter:
   targetSettings:
     :
       enableTranscoding: 1
-      codec: 1
+      codec: 0
       resizeFormat: 0
       aspectRatio: 0
       customWidth: 1080
       customHeight: 1920
-      bitrateMode: 2
-      spatialQuality: 2
+      bitrateMode: 1
+      spatialQuality: 1
     Android:
       enableTranscoding: 1
-      codec: 1
+      codec: 0
       resizeFormat: 0
       aspectRatio: 0
       customWidth: 1080
       customHeight: 1920
-      bitrateMode: 2
-      spatialQuality: 2
+      bitrateMode: 1
+      spatialQuality: 1
     Standalone:
       enableTranscoding: 1
       codec: 1

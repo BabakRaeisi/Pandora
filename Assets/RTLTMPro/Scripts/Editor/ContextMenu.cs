@@ -145,7 +145,7 @@ namespace RTLTMPro
             var go = Resources.Load<GameObject>("UIElements/RTLTMP-InputField");
             if (go == null)
             {
-                Debug.LogError("Prefab not found at Resources/CustomUI/RTLButton");
+              
                 return;
             }
 
@@ -201,7 +201,7 @@ namespace RTLTMPro
             var go = Resources.Load<GameObject>("UIElements/RTLTMP-Dropdown");
             if (go == null)
             {
-                Debug.LogError("Prefab not found at Resources/UIElements/RTLTMP-Dropdown");
+               
                 return;
             }
 

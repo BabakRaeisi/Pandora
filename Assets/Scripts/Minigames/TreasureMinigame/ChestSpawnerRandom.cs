@@ -51,7 +51,7 @@ public class ChestSpawnerRandom : MonoBehaviour
 
         if (area == null || chestPrefab == null)
         {
-            Debug.LogError("[ChestSpawnerRandom] Missing Play Area or Chest Prefab.");
+       
             return;
         }
 
@@ -75,7 +75,7 @@ public class ChestSpawnerRandom : MonoBehaviour
 
         if (chestSize.x <= 0f || chestSize.y <= 0f)
         {
-            Debug.LogError("[ChestSpawnerRandom] Chest prefab has an invalid RectTransform size.");
+        
             return;
         }
 
@@ -86,7 +86,7 @@ public class ChestSpawnerRandom : MonoBehaviour
 
         if (availableWidth <= 0f || availableHeight <= 0f)
         {
-            Debug.LogError("[ChestSpawnerRandom] Play area is too small after padding.");
+   
             return;
         }
 
@@ -119,17 +119,13 @@ public class ChestSpawnerRandom : MonoBehaviour
 
         if (bestScale <= 0f)
         {
-            Debug.LogError("[ChestSpawnerRandom] Could not calculate a valid chest layout.");
+          
             return;
         }
 
         if (bestScale < preferredMinimumScale)
         {
-            Debug.LogWarning(
-                $"[ChestSpawnerRandom] {activeCount} chests require scale {bestScale:F2} " +
-                $"to avoid overlap in the current Play Area. Enlarge the Play Area, " +
-                $"reduce Padding/Min Gap, or use a smaller chest sprite."
-            );
+           
         }
 
         float scaledChestWidth = chestSize.x * bestScale;

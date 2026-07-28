@@ -21,14 +21,11 @@ public static class FindMissingScripts
                     continue;
 
                 missingCount++;
-                Debug.Log(
-                    $"Missing script on: {GetHierarchyPath(gameObject)}",
-                    gameObject
-                );
+             
             }
         }
 
-        Debug.Log($"Found {missingCount} missing script component(s).");
+     
     }
 
     private static string GetHierarchyPath(GameObject gameObject)

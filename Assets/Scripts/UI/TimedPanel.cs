@@ -93,7 +93,7 @@ public class TimedPanel : MonoBehaviour
 		{
 			if (panel == null)
 			{
-				Debug.LogWarning("[TimedPanel] Slide mode requires a Panel RectTransform.");
+			 
 				return;
 			}
 

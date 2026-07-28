@@ -130,13 +130,13 @@ public class QueuedSendTest : MonoBehaviour
         if (OfflineQueue.Instance == null)
         {
             lastResult = "FAIL — OfflineQueue not found in scene.";
-            Debug.LogError($"[QueuedSendTest] {lastResult}");
+       
             return false;
         }
         if (DataUploader.Instance == null)
         {
             lastResult = "FAIL — DataUploader not found in scene.";
-            Debug.LogError($"[QueuedSendTest] {lastResult}");
+       
             return false;
         }
         return true;
@@ -147,14 +147,14 @@ public class QueuedSendTest : MonoBehaviour
         if (DataUploader.Instance == null)
         {
             lastResult = "FAIL — DataUploader not found in scene.";
-            Debug.LogError($"[QueuedSendTest] {lastResult}");
+      
             return false;
         }
 
         if (OfflineQueue.Instance == null)
         {
             lastResult = "FAIL — OfflineQueue not found in scene.";
-            Debug.LogError($"[QueuedSendTest] {lastResult}");
+           
             return false;
         }
 
@@ -186,7 +186,7 @@ public class QueuedSendTest : MonoBehaviour
         if (PlayerDataManager.Instance == null || PlayerDataManager.Instance.Data == null)
         {
             lastResult = "FAIL — PlayerDataManager not found in scene.";
-            Debug.LogError($"[QueuedSendTest] {lastResult}");
+     
             return false;
         }
 

@@ -51,15 +51,13 @@ public class BridgePieceUI : MonoBehaviour
 
         if (!image)
         {
-            Debug.LogError($"BridgePieceUI '{name}' missing Image.");
             enabled = false;
             return;
         }
 
         if (!button)
         {
-            Debug.LogError($"BridgePieceUI '{name}' missing Button.");
-            enabled = false;
+             enabled = false;
             return;
         }
 

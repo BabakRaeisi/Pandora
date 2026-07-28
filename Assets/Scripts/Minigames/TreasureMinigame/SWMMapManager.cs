@@ -44,20 +44,13 @@ public class SWMMapManager : MonoBehaviour
         if (PlayerDataManager.Instance == null ||
             PlayerDataManager.Instance.Data == null)
         {
-            Debug.LogError(
-                "[SWMMapManager] PlayerDataManager or player data is missing.",
-                this
-            );
+       
             return;
         }
 
         int totalLevels = GetTotalLevels();
         var data = PlayerDataManager.Instance.Data;
-
-        Debug.Log(
-            $"[SWMMapManager] swmGateReached = {data.swmGateReached}",
-            this
-        );
+ 
 
         ApplyGatewayBackground(data.swmGateReached);
         ShowPendingGatewayPanel(data.swmGateReached);

@@ -24,13 +24,13 @@ namespace RTLTMPro
         {
             if (displayText == null)
             {
-                Debug.LogError("Display text not found.");
+            
                 return;
             }
 
             if (displayText == m_Placeholder)
             {
-                Debug.LogError("Display text not found. Make sure the DisplayText is placed as first child object.");
+              
                 return;
             }
 

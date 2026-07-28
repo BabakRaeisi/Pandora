@@ -55,7 +55,7 @@ public class DataUploader : MonoBehaviour
     {
         if (request == null)
         {
-            Debug.LogError("[DataUploader] Upload request is null.");
+            
             tcs.SetResult(false);
             yield break;
         }
@@ -64,7 +64,7 @@ public class DataUploader : MonoBehaviour
 
         if (!TryGetValidatedUploadUri(out var validatedUri, out var validationError))
         {
-            Debug.LogError($"[DataUploader] {validationError}");
+       
             tcs.SetResult(false);
             yield break;
         }
@@ -74,7 +74,7 @@ public class DataUploader : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(json) || json == "{}")
         {
-            Debug.LogError("[DataUploader] Serialized payload is empty ({}). Upload cancelled.");
+           
             tcs.SetResult(false);
             yield break;
         }
@@ -103,7 +103,7 @@ public class DataUploader : MonoBehaviour
         }
         catch (InvalidOperationException ex)
         {
-            Debug.LogError($"[DataUploader] Request could not be started: {ex.Message}");
+          
             tcs.SetResult(false);
             yield break;
         }
@@ -119,14 +119,11 @@ public class DataUploader : MonoBehaviour
         bool success = transportSuccess && httpSuccess && !htmlResponse;
 
         if (!success)
-            Debug.LogWarning(
-                $"[DataUploader] Upload failed. URL: {validatedUri} | Result: {www.result} | " +
-                $"HTTP: {www.responseCode} | Error: {www.error} | Response: {LastResponseBody}");
+          {}
         else
-            Debug.Log($"[DataUploader] Upload successful. HTTP: {www.responseCode}");
-
+           {
         tcs.SetResult(success);
-    }
+    }}
 
     private static void NormalizeRequestForUpload(SessionUploadRequest request)
     {

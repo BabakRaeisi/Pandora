@@ -13,14 +13,14 @@ namespace RVFX.UIToolkit.EdgeEffects
         {
             if (uxml == null)
             {
-                Debug.LogWarning("[AttachUXMLByName] UXML is null.");
+              
                 return;
             }
 
             var doc = uiDocument != null ? uiDocument : GetComponent<UIDocument>();
             if (doc == null || doc.rootVisualElement == null)
             {
-                Debug.LogWarning("[AttachUXMLByName] UIDocument not ready.");
+            
                 return;
             }
 
@@ -28,7 +28,7 @@ namespace RVFX.UIToolkit.EdgeEffects
             var target = root.Q<VisualElement>(targetName);
             if (target == null)
             {
-                Debug.LogWarning($"[AttachUXMLByName] Target not found: name='{targetName}'.");
+             
                 return;
             }
 

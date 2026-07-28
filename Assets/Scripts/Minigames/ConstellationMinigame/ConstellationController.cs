@@ -144,7 +144,6 @@ public class ConstellationController : MonoBehaviour
         for (int i = 0; i < stars.Length; i++)
             if (stars[i].id == id) return stars[i];
 
-        Debug.LogError($"Star {id} not found");
         return null;
     }
 

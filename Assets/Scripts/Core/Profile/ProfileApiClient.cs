@@ -53,8 +53,7 @@ public class ProfileApiClient : MonoBehaviour
     {
         if (!TryGetValidatedProfileUri(out var validatedUri, out var validationError))
         {
-            Debug.LogError($"[ProfileApiClient] {validationError}");
-            tcs.SetResult(null);
+             tcs.SetResult(null);
             yield break;
         }
 
@@ -84,7 +83,6 @@ public class ProfileApiClient : MonoBehaviour
         }
         catch (InvalidOperationException ex)
         {
-            Debug.LogError($"[ProfileApiClient] Request could not be started: {ex.Message}");
             tcs.SetResult(null);
             yield break;
         }
@@ -96,9 +94,7 @@ public class ProfileApiClient : MonoBehaviour
 
         if (!ok)
         {
-            Debug.LogError(
-                $"[ProfileApiClient] Profile call failed. HTTP: {www.responseCode} | " +
-                $"Error: {www.error} | Body: {www.downloadHandler.text}");
+          
             tcs.SetResult(null);
             yield break;
         }
@@ -108,7 +104,7 @@ public class ProfileApiClient : MonoBehaviour
 
         if (response == null)
         {
-            Debug.LogError("[ProfileApiClient] Failed to parse server response.");
+           
             tcs.SetResult(null);
             yield break;
         }

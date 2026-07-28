@@ -52,6 +52,8 @@ public class SWMGameManager : MonoBehaviour
 
     private readonly Dictionary<SWMChest, int> chestId = new();
 
+    private HashSet<int> usedTreasureIndicesInLevel = new();
+
     private int numBoxes;
     private int goalCollected;
     private HashSet<int> treasureIndices = new();
@@ -279,10 +281,7 @@ public class SWMGameManager : MonoBehaviour
     {
         if (config == null || sessionData == null || spawner == null)
         {
-            Debug.LogError(
-                "[SWMGameManager] Missing config, sessionData, or chest spawner."
-            );
-            return;
+        
         }
 
         currentLevel = Mathf.Clamp(levelNumber, 1, GetTotalLevels());
@@ -290,10 +289,19 @@ public class SWMGameManager : MonoBehaviour
 
         if (levelCfg.levelNumber == 0)
         {
-            Debug.LogError(
-                $"[SWMGameManager] Missing LevelConfig for level {currentLevel}."
-            );
+       
             return;
+        }
+
+        // Trials must equal chest count: exactly one trial per chest,
+        // so the treasure visits every chest once per elimination cycle
+        // before positions are reshuffled.
+        poolSize = Mathf.Clamp(levelCfg.boxes, 3, 12);
+
+        if (levelCfg.trials != poolSize)
+        {
+           
+            levelCfg.trials = poolSize;
         }
 
         StopRunningTrialRoutines();
@@ -303,13 +311,12 @@ public class SWMGameManager : MonoBehaviour
         trialsCompleteInLevel = 0;
         consecutiveFailsOnLevel = 0;
         trialIndexInLevel = 0;
+        usedTreasureIndicesInLevel.Clear();
 
         hud?.SetupDay(levelCfg.trials);
         hud?.SetTrialsDone(trialsCompleteInLevel);
         hud?.SetupTrial();
         hud?.ShowDayComplete();
-
-        poolSize = Mathf.Clamp(levelCfg.boxes, 3, 12);
 
         for (int i = 0; i < pool.Count; i++)
         {
@@ -350,10 +357,14 @@ public class SWMGameManager : MonoBehaviour
 
     numBoxes = Mathf.Clamp(levelCfg.boxes, 3, poolSize);
 
-    // Every trial uses a new randomized, non-overlapping chest arrangement.
-    spawner.Reposition(pool, numBoxes);
+    // Once the treasure has visited every chest, reshuffle chest positions
+    // and start a new "elimination cycle".
+    if (usedTreasureIndicesInLevel.Count >= numBoxes)
+    {
+        usedTreasureIndicesInLevel.Clear();
+        spawner.Reposition(pool, numBoxes);
+    }
 
-    // One treasure is hidden in one random active chest for this trial.
     goalCollected = 1;
 
     collectedFound = 0;
@@ -363,11 +374,11 @@ public class SWMGameManager : MonoBehaviour
 
     hud?.SetupTrial();
 
-    // New randomized chest positions for this trial.
-    spawner.Reposition(pool, numBoxes);
-
     // One treasure changes location each trial.
-    treasureIndices = PickUniqueIndices(numBoxes, 1);
+    // It must never reuse a chest index that already held the treasure
+    // in this elimination cycle.
+    treasureIndices = PickUniqueIndices(numBoxes, 1, usedTreasureIndicesInLevel);
+    usedTreasureIndicesInLevel.UnionWith(treasureIndices);
 
     for (int i = 0; i < numBoxes; i++)
     {
@@ -394,6 +405,24 @@ public class SWMGameManager : MonoBehaviour
 
         int chestIndex = GetChestId(chest);
 
+        // A chest that ever held the treasure during this elimination cycle
+        // is permanently an error target, regardless of the current trial's
+        // visual reset state (ResetForTrial re-hides chests every trial).
+        bool chestEverHadTreasure =
+            usedTreasureIndicesInLevel.Contains(chestIndex) &&
+            !treasureIndices.Contains(chestIndex);
+
+        if (chestEverHadTreasure)
+        {
+            chest.RevealAgain();
+
+            withinErrors++;
+            RecordSelection(chestIndex, "within_error", elapsedMs);
+            consecutiveFailsOnLevel++;
+            HandleWrongSelection();
+            return;
+        }
+
         if (chest.State == SWMChest.ChestState.Unopened)
         {
             chest.RevealFirstTime();
@@ -406,35 +435,20 @@ public class SWMGameManager : MonoBehaviour
                 RecordSelection(chestIndex, "treasure", elapsedMs);
                 AudioManager.Instance.Play("Coin");
 
-                // Exactly one treasure per trial.
-                // CompleteTrial schedules the next trial, which randomizes chest placement
-                // and assigns a new treasure chest.
                 CompleteTrial(false);
                 return;
             }
 
-            // First opening of an empty chest is not an error.
+            // First opening of a chest that has never had treasure is not an error.
             RecordSelection(chestIndex, "empty", elapsedMs);
             AudioManager.Instance.Play("ChestClose");
             return;
         }
 
-        // Only reopening an already opened chest is an error.
+        // Already opened this trial, currently holds the treasure
+        // (repeat click on the correct chest before completing the trial).
         chest.RevealAgain();
-
-        if (chest.State == SWMChest.ChestState.Empty)
-        {
-            betweenErrors++;
-            RecordSelection(chestIndex, "between_error", elapsedMs);
-        }
-        else if (chest.State == SWMChest.ChestState.Treasure)
-        {
-            withinErrors++;
-            RecordSelection(chestIndex, "within_error", elapsedMs);
-        }
-
-        consecutiveFailsOnLevel++;
-        HandleWrongSelection();
+        RecordSelection(chestIndex, "empty_repeat", elapsedMs);
     }
 
     private void HandleWrongSelection()
@@ -592,7 +606,6 @@ public class SWMGameManager : MonoBehaviour
 
         bool passedGatewayLevel =
             completedCurrentUnlockedLevel &&
-            !assistedLevelCompletion &&
             config.IsGatewayLevel(levelCfg);
 
         // Gateway completion must be saved even if this level was replayed.
@@ -607,9 +620,7 @@ public class SWMGameManager : MonoBehaviour
             PlayerPrefs.SetInt(GatewayPanelPendingKey, 1);
             PlayerPrefs.Save();
 
-            Debug.Log(
-                $"[SWMGameManager] SWM gateway reached at level {levelStartedAt}."
-            );
+         
         }
 
         feedbackMessanger?.ShowOutcomePanel(
@@ -737,6 +748,42 @@ public class SWMGameManager : MonoBehaviour
 
         for (int i = 0; i < selectedCount; i++)
             result.Add(indices[i]);
+
+        return result;
+    }
+
+    private static HashSet<int> PickUniqueIndices(int count, int selectedCount, HashSet<int> excluded)
+    {
+        var candidates = new List<int>(count);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (!excluded.Contains(i))
+                candidates.Add(i);
+        }
+
+        // Safety net: if every chest has already held the treasure
+        // (e.g. trials > boxes), reset and allow reuse rather than crashing.
+        if (candidates.Count < selectedCount)
+        {
+            excluded.Clear();
+            candidates.Clear();
+
+            for (int i = 0; i < count; i++)
+                candidates.Add(i);
+        }
+
+        for (int i = 0; i < selectedCount; i++)
+        {
+            int randomIndex = UnityEngine.Random.Range(i, candidates.Count);
+            (candidates[i], candidates[randomIndex]) =
+                (candidates[randomIndex], candidates[i]);
+        }
+
+        var result = new HashSet<int>();
+
+        for (int i = 0; i < selectedCount; i++)
+            result.Add(candidates[i]);
 
         return result;
     }

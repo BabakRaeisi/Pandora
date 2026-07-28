@@ -120,8 +120,7 @@ public class ConstellationConfigSO : ScriptableObject
     {
         if (levels == null)
         {
-            Debug.LogWarning("[ConstellationConfigSO] levels is NULL");
-            return null;
+           return null;
         }
 
         levelNumber = Mathf.Clamp(levelNumber, 1, 16);
@@ -130,12 +129,11 @@ public class ConstellationConfigSO : ScriptableObject
         {
             if (levels[i] != null && levels[i].levelNumber == levelNumber)
             {
-                Debug.Log($"[ConstellationConfigSO] GetLevel({levelNumber}) => index={i}, levelNumber={levels[i].levelNumber}, isGateway={levels[i].isGatewayLevel}");
-                return levels[i];
+                 return levels[i];
             }
         }
 
-        Debug.LogWarning($"[ConstellationConfigSO] GetLevel({levelNumber}) => NOT FOUND");
+   
         return null;
     }
 

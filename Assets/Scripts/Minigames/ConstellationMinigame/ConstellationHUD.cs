@@ -31,8 +31,7 @@ public class ConstellationHUD : MonoBehaviour
 
     public void SetupDay(int totalTrials)
     {
-        Debug.Log($"[ConstellationHUD] SetupDay({totalTrials}) trialsBar={(trialsBar ? trialsBar.name : "NULL")}");
-        trialsBar?.Setup(totalTrials);
+      trialsBar?.Setup(totalTrials);
     }
 
     public void SetupTrial()
@@ -50,8 +49,7 @@ public class ConstellationHUD : MonoBehaviour
 
     public void SetTrialsDone(int done)
     {
-        Debug.Log($"[ConstellationHUD] SetTrialsDone({done}) trialsBar={(trialsBar ? trialsBar.name : "NULL")}");
-        trialsBar?.SetFilled(done);
+       trialsBar?.SetFilled(done);
     }
 
     public void ShowTrialComplete()

@@ -27,11 +27,7 @@ public class IslandStageController : MonoBehaviour
         if (PlayerDataManager.Instance == null ||
             PlayerDataManager.Instance.Data == null)
         {
-            Debug.LogError(
-                "[IslandStageController] Player data is unavailable.",
-                this
-            );
-            return;
+             return;
         }
 
         PlayerSaveData data = PlayerDataManager.Instance.Data;
@@ -128,12 +124,7 @@ public class IslandStageController : MonoBehaviour
 
             if (canvasGroup == null)
             {
-                Debug.LogWarning(
-                    $"[IslandStageController] Background '{background.name}' " +
-                    "needs a CanvasGroup component.",
-                    background
-                );
-                continue;
+               continue;
             }
 
             // All backgrounds remain active. Only the selected stage is visible.

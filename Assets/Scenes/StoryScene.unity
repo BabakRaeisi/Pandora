@@ -208,7 +208,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1535900643}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1394682909
@@ -571,7 +572,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1767867696}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 519420032}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -604,6 +605,10 @@ MonoBehaviour:
       \u06A9\u0645 \u0635\u0628\u0631 \u06A9\u0646\u060C \u0645\u06CC\u062E\u0648\u0627\u0645
       \u06CC\u0647 \u0686\u06CC\u0632 \u0645\u0647\u0645 \u0628\u0647\u062A \u0628\u06AF\u0645."
     loomakSprite: {fileID: 4551388475707488161, guid: f0352b31fde69b748bcfab9f77cb0b07, type: 3}
+  - message: "\u0631\u0648\u0632\u06CC \u0631\u0648\u0632\u06AF\u0627\u0631\u06CC\u060C
+      \u0627\u06CC\u0646 \u062F\u0646\u06CC\u0627 \u067E\u0631 \u0627\u0632 \u0646\u0648\u0631
+      \u0648 \u0634\u0627\u062F\u06CC \u0628\u0648\u062F"
+    loomakSprite: {fileID: -1440929055495075452, guid: b752dae3af200944283ff7de1febe1dc, type: 3}
   - message: " \u06CC\u0647 \u0627\u062A\u0641\u0627\u0642 \u0628\u062F \u0627\u0641\u062A\u0627\u062F\u060C
       \u062C\u0639\u0628\u0647 \u067E\u0627\u0646\u062F\u0648\u0631\u0627 \u0628\u0627\u0632
       \u0634\u062F."
@@ -757,6 +762,5 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 519420032}
-  - {fileID: 1535900643}
   - {fileID: 1441275922}
   - {fileID: 1528720596}

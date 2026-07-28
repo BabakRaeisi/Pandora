@@ -1,4 +1,4 @@
-// BridgPathGenerator.cs  (FULL)  — 2-column, contiguous, FORCE zigzag when requested
+// BridgPathGenerator.cs  (FULL)  ï¿½ 2-column, contiguous, FORCE zigzag when requested
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -169,5 +169,97 @@ public static class BridgePathGenerator
             int j = Random.Range(0, i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
+    }
+
+    /// <summary>
+    /// Generates a grouped sequence of stone IDs.
+    /// ID layout: id = row * cols + col
+    /// Each row must have at least one stone selected.
+    /// stepCount is clamped to valid range internally.
+    /// Caller MUST use sequence.Count as goalPieces â€” not the requested stepCount.
+    /// </summary>
+    public static List<int> GenerateGroupedSequence(
+        int cols,
+        int rowCount,
+        int stepCount,
+        bool startFromBottom,
+        Dictionary<int, int> pieceRowLookup)
+    {
+        if (cols <= 0 || rowCount <= 0 || pieceRowLookup == null || pieceRowLookup.Count == 0)
+        {
+             return new List<int>();
+        }
+
+        // --- 1. Build ordered groups in traversal order ---
+        List<List<int>> orderedGroups = new List<List<int>>();
+
+        for (int orderIndex = 0; orderIndex < rowCount; orderIndex++)
+        {
+            int row = startFromBottom ? rowCount - 1 - orderIndex : orderIndex;
+
+            List<int> group = new List<int>();
+
+            foreach (KeyValuePair<int, int> pair in pieceRowLookup)
+            {
+                if (pair.Value == row)
+                    group.Add(pair.Key);
+            }
+
+            if (group.Count == 0)
+            {
+                return new List<int>();
+            }
+
+            orderedGroups.Add(group);
+        }
+
+        // --- 2. Clamp stepCount to valid range ---
+        int maxSteps = 0;
+        for (int i = 0; i < orderedGroups.Count; i++)
+            maxSteps += orderedGroups[i].Count;
+
+        stepCount = Mathf.Clamp(stepCount, rowCount, maxSteps);
+
+        // --- 3. Assign at least one stone per group, distribute extras randomly ---
+        int[] selectionsPerGroup = new int[rowCount];
+        for (int i = 0; i < rowCount; i++)
+            selectionsPerGroup[i] = 1;
+
+        int remaining = stepCount - rowCount;
+
+        while (remaining > 0)
+        {
+            List<int> groupsWithCapacity = new List<int>();
+
+            for (int g = 0; g < orderedGroups.Count; g++)
+            {
+                if (selectionsPerGroup[g] < orderedGroups[g].Count)
+                    groupsWithCapacity.Add(g);
+            }
+
+            if (groupsWithCapacity.Count == 0)
+                break;
+
+            selectionsPerGroup[groupsWithCapacity[Random.Range(0, groupsWithCapacity.Count)]]++;
+            remaining--;
+        }
+
+        // --- 4. Pick random stones from each group ---
+        List<int> sequence = new List<int>(stepCount);
+
+        for (int g = 0; g < orderedGroups.Count; g++)
+        {
+            List<int> available = new List<int>(orderedGroups[g]);
+            int toPick = selectionsPerGroup[g];
+
+            for (int p = 0; p < toPick; p++)
+            {
+                int idx = Random.Range(0, available.Count);
+                sequence.Add(available[idx]);
+                available.RemoveAt(idx);
+            }
+        }
+
+        return sequence;
     }
 }

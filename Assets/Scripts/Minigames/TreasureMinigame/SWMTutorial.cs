@@ -138,10 +138,7 @@ public class SWMTutorial : MonoBehaviour
 
             if (treasureChestIndex < 0)
             {
-                Debug.LogWarning(
-                    "[SWMTutorial] Assign exactly one demo chest with Has Treasure enabled.",
-                    this
-                );
+            
 
                 yield return new WaitForSeconds(loopPause);
                 continue;

@@ -277,8 +277,7 @@ public class ConstellationGameManager : MonoBehaviour
     {
         if (config == null)
         {
-            Debug.LogError("[ConstellationGameManager] Config is NULL.");
-            return;
+             return;
         }
 
         currentLevel = Mathf.Clamp(levelNumber, 1, ProgressionManager.MAX_LEVEL);
@@ -286,10 +285,7 @@ public class ConstellationGameManager : MonoBehaviour
 
         if (levelCfg == null)
         {
-            Debug.LogError(
-                $"[ConstellationGameManager] Missing LevelConfig for level {currentLevel}."
-            );
-            return;
+           return;
         }
 
         levelStartedAt = currentLevel;

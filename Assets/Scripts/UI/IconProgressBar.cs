@@ -20,8 +20,7 @@ public class IconProgressBar : MonoBehaviour
     {
         if (container == null || iconPrefab == null)
         {
-            Debug.LogError($"[IconProgressBar] Missing refs | container={(container ? container.name : "NULL")} | iconPrefab={(iconPrefab ? iconPrefab.name : "NULL")}");
-            return;
+                  return;
         }
 
         total = totalCount;

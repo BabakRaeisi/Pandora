@@ -29,7 +29,6 @@ public class FeedbackMessanger : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log($"[FeedbackMessanger] Awake on '{name}' | toastPanel={(toastPanel ? toastPanel.name : "NULL")}");
     }
 
     // Root panel activation/deactivation is handled elsewhere.
@@ -115,9 +114,7 @@ public class FeedbackMessanger : MonoBehaviour
 
         // config-driven only
         if (string.IsNullOrWhiteSpace(message))
-        {
-            Debug.LogWarning("[FeedbackMessanger] ShowWrongPattern called without config message.");
-            return;
+        {  return;
         }
 
         string t = string.IsNullOrWhiteSpace(title) ? string.Empty : title.Trim();
@@ -139,8 +136,7 @@ public class FeedbackMessanger : MonoBehaviour
 
         if (toastPanel == null)
         {
-            Debug.LogWarning("[FeedbackMessanger] toastPanel is NULL in ShowSuccess.");
-            return;
+             return;
         }
 
         toastPanel.Show(finalTitle, finalMessage, ToastPanel.ToastType.Success);
@@ -153,8 +149,7 @@ public class FeedbackMessanger : MonoBehaviour
 
         if (toastPanel == null)
         {
-            Debug.LogWarning("[FeedbackMessanger] toastPanel is NULL in ShowInfo.");
-            return;
+             return;
         }
 
         toastPanel.Show(finalTitle, finalMessage, ToastPanel.ToastType.Info);
