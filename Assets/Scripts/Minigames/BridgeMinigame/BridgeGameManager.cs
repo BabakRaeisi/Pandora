@@ -60,7 +60,8 @@ public class BridgeGameManager : MonoBehaviour
     private int trialsCompleteInLevel;
     private int consecutiveFailsOnLevel;
     private int trialIndexInLevel;
-
+private int successfulTrialsInLevel;
+private ActiveLevelTimer activeLevelTimer = new();
     private readonly Dictionary<int, BridgePieceUI> piecesById = new();
 
     private int activeRows;
@@ -329,9 +330,12 @@ public class BridgeGameManager : MonoBehaviour
 
         levelStartedAt = currentLevel;
         levelStartTime = Time.time;
-        trialsCompleteInLevel = 0;
-        consecutiveFailsOnLevel = 0;
-        trialIndexInLevel = 0;
+    trialsCompleteInLevel = 0;
+successfulTrialsInLevel = 0;
+consecutiveFailsOnLevel = 0;
+trialIndexInLevel = 0;
+
+activeLevelTimer.Start();
 
         hud?.SetupDay(levelCfg.trials);
         hud?.SetTrialsDone(0);
@@ -579,8 +583,12 @@ public class BridgeGameManager : MonoBehaviour
             completionMs
         );
 
-        trialsCompleteInLevel++;
-        hud?.SetTrialsDone(trialsCompleteInLevel);
+       trialsCompleteInLevel++;
+
+if (!assisted)
+    successfulTrialsInLevel++;
+
+hud?.SetTrialsDone(trialsCompleteInLevel);
 
         if (trialsCompleteInLevel >= levelCfg.trials)
         {
@@ -601,6 +609,10 @@ public class BridgeGameManager : MonoBehaviour
         consecutiveFailsOnLevel = 0;
         autoNextTrialRoutine = StartCoroutine(AutoNextTrialRoutine());
     }
+private void OnApplicationPause(bool pauseStatus)
+{
+    activeLevelTimer.SetPaused(pauseStatus);
+}
 
     private IEnumerator AutoNextTrialRoutine()
     {
@@ -610,6 +622,41 @@ public class BridgeGameManager : MonoBehaviour
 
     private void CompleteLevelAfterTrials(bool assistedLevelCompletion)
     {
+        int activeDurationMs =
+    activeLevelTimer.StopAndGetMilliseconds();
+
+var levelRecord = new LevelCompletionRecord
+{
+    eventId = Guid.NewGuid().ToString(),
+
+    playerId = PlayerDataManager.Instance.Data.profile.phoneNumber,
+
+    minigame = "Bridge",
+    levelNumber = currentLevel,
+
+    successfulTrials = successfulTrialsInLevel,
+    requiredTrials = levelCfg.trials,
+
+    normalPass = !assistedLevelCompletion,
+    assistedPass = assistedLevelCompletion,
+
+    activeDurationMs = activeDurationMs,
+
+    startedAtUtc = activeLevelTimer.StartedAtUtc,
+    completedAtUtc = DateTime.UtcNow.ToString("o")
+};
+
+Debug.Log(
+    $"[LEVEL REPORT] " +
+    $"{levelRecord.playerId} | " +
+    $"{levelRecord.minigame} L{levelRecord.levelNumber} | " +
+    $"{levelRecord.successfulTrials}/{levelRecord.requiredTrials} | " +
+    $"Normal={levelRecord.normalPass} | " +
+    $"Assisted={levelRecord.assistedPass} | " +
+    $"Duration={levelRecord.activeDurationMs}ms | " +
+    $"Started={levelRecord.startedAtUtc} | " +
+    $"Completed={levelRecord.completedAtUtc}"
+);OfflineQueue.Instance?.EnqueueLevelReport(levelRecord);
         int completionMs = Mathf.RoundToInt(
             (Time.time - levelStartTime) * 1000f
         );

@@ -36,7 +36,8 @@ public class ConstellationGameManager : MonoBehaviour
     private int trialsCompleteInLevel;
     private int consecutiveFailsOnLevel;
     private int wrongAttempts;
-
+private int successfulTrialsInLevel;
+private ActiveLevelTimer activeLevelTimer = new();
     private bool busy;
     private bool gameplayBootstrapped;
     private bool bootstrapRequested;
@@ -290,10 +291,13 @@ public class ConstellationGameManager : MonoBehaviour
 
         levelStartedAt = currentLevel;
         levelStartTime = Time.time;
-        trialIndexInLevel = 0;
-        trialsCompleteInLevel = 0;
-        consecutiveFailsOnLevel = 0;
-        wrongAttempts = 0;
+     trialIndexInLevel = 0;
+trialsCompleteInLevel = 0;
+successfulTrialsInLevel = 0;
+consecutiveFailsOnLevel = 0;
+wrongAttempts = 0;
+
+activeLevelTimer.Start();
         busy = false;
 
         hud.SetupDay(levelCfg.trials);
@@ -359,13 +363,17 @@ public class ConstellationGameManager : MonoBehaviour
 
         HandleWrongTrial(completionMs);
     }
-
+private void OnApplicationPause(bool pauseStatus)
+{
+    activeLevelTimer.SetPaused(pauseStatus);
+}
     private void HandleCorrectTrial(int completionMs)
     {
         AudioManager.Instance.Play("SuccessDing2");
 
         trialsCompleteInLevel++;
-        consecutiveFailsOnLevel = 0;
+successfulTrialsInLevel++;
+consecutiveFailsOnLevel = 0;
         hud.SetTrialsDone(trialsCompleteInLevel);
 
         var trialResult = ProgressionManager.Instance.EvaluateTrial(
@@ -467,7 +475,41 @@ public class ConstellationGameManager : MonoBehaviour
     }
 
     private void CompleteLevelAfterTrials(bool assistedLevelCompletion)
-    {
+    {int activeDurationMs =
+    activeLevelTimer.StopAndGetMilliseconds();
+
+var levelRecord = new LevelCompletionRecord
+{
+    eventId = Guid.NewGuid().ToString(),
+
+    playerId = PlayerDataManager.Instance.Data.profile.phoneNumber,
+
+    minigame = "Constellation",
+    levelNumber = currentLevel,
+
+    successfulTrials = successfulTrialsInLevel,
+    requiredTrials = levelCfg.trials,
+
+    normalPass = !assistedLevelCompletion,
+    assistedPass = assistedLevelCompletion,
+
+    activeDurationMs = activeDurationMs,
+
+    startedAtUtc = activeLevelTimer.StartedAtUtc,
+    completedAtUtc = DateTime.UtcNow.ToString("o")
+};
+
+Debug.Log(
+    $"[LEVEL REPORT] " +
+    $"{levelRecord.playerId} | " +
+    $"{levelRecord.minigame} L{levelRecord.levelNumber} | " +
+    $"{levelRecord.successfulTrials}/{levelRecord.requiredTrials} | " +
+    $"Normal={levelRecord.normalPass} | " +
+    $"Assisted={levelRecord.assistedPass} | " +
+    $"Duration={levelRecord.activeDurationMs}ms | " +
+    $"Started={levelRecord.startedAtUtc} | " +
+    $"Completed={levelRecord.completedAtUtc}"
+);OfflineQueue.Instance?.EnqueueLevelReport(levelRecord);
         int levelCompletionMs = Mathf.RoundToInt(
             (Time.time - levelStartTime) * 1000f
         );

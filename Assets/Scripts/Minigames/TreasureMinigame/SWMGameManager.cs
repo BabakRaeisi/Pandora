@@ -46,7 +46,8 @@ public class SWMGameManager : MonoBehaviour
     private int trialsCompleteInLevel;
     private int consecutiveFailsOnLevel;
     private int trialIndexInLevel;
-
+    private int successfulTrialsInLevel;
+private ActiveLevelTimer activeLevelTimer = new();
     private List<SWMChest> pool = new();
     private int poolSize;
 
@@ -309,8 +310,11 @@ public class SWMGameManager : MonoBehaviour
         levelStartedAt = currentLevel;
         levelStartTime = Time.time;
         trialsCompleteInLevel = 0;
-        consecutiveFailsOnLevel = 0;
-        trialIndexInLevel = 0;
+successfulTrialsInLevel = 0;
+consecutiveFailsOnLevel = 0;
+trialIndexInLevel = 0;
+
+activeLevelTimer.Start();
         usedTreasureIndicesInLevel.Clear();
 
         hud?.SetupDay(levelCfg.trials);
@@ -533,8 +537,10 @@ public class SWMGameManager : MonoBehaviour
             return;
         }
 
-        trialsCompleteInLevel++;
-        hud?.SetTrialsDone(trialsCompleteInLevel);
+       trialsCompleteInLevel++;
+successfulTrialsInLevel++;
+
+hud?.SetTrialsDone(trialsCompleteInLevel);
 
         if (trialsCompleteInLevel >= levelCfg.trials)
         {
@@ -559,9 +565,47 @@ public class SWMGameManager : MonoBehaviour
         yield return new WaitForSeconds(autoNextTrialDelay);
         StartNextTrial();
     }
-
+    private void OnApplicationPause(bool pauseStatus)
+{
+    activeLevelTimer.SetPaused(pauseStatus);
+}
     private void CompleteLevelAfterTrials(bool assistedLevelCompletion)
     {
+        int activeDurationMs =
+    activeLevelTimer.StopAndGetMilliseconds();
+
+var levelRecord = new LevelCompletionRecord
+{
+    eventId = Guid.NewGuid().ToString(),
+
+    playerId = PlayerDataManager.Instance.Data.profile.phoneNumber,
+
+    minigame = "SWM",
+    levelNumber = currentLevel,
+
+    successfulTrials = successfulTrialsInLevel,
+    requiredTrials = levelCfg.trials,
+
+    normalPass = !assistedLevelCompletion,
+    assistedPass = assistedLevelCompletion,
+
+    activeDurationMs = activeDurationMs,
+
+    startedAtUtc = activeLevelTimer.StartedAtUtc,
+    completedAtUtc = DateTime.UtcNow.ToString("o")
+};
+
+Debug.Log(
+    $"[LEVEL REPORT] " +
+    $"{levelRecord.playerId} | " +
+    $"{levelRecord.minigame} L{levelRecord.levelNumber} | " +
+    $"{levelRecord.successfulTrials}/{levelRecord.requiredTrials} | " +
+    $"Normal={levelRecord.normalPass} | " +
+    $"Assisted={levelRecord.assistedPass} | " +
+    $"Duration={levelRecord.activeDurationMs}ms | " +
+    $"Started={levelRecord.startedAtUtc} | " +
+    $"Completed={levelRecord.completedAtUtc}"
+);OfflineQueue.Instance?.EnqueueLevelReport(levelRecord);
         StopRunningTrialRoutines();
 
         int completionMs = Mathf.RoundToInt(

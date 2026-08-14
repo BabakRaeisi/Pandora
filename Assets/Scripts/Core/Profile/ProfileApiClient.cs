@@ -13,7 +13,7 @@ public class ProfileApiClient : MonoBehaviour
 {
     public static ProfileApiClient Instance { get; private set; }
 
-    [SerializeField] private string profileUrl = "https://10.0.0.183:5001/api/analytics/profile";
+     private string profileUrl = "https://pandora-api.babakraeisi.com/api/analytics/profile";
     [SerializeField] private int    requestTimeoutSeconds = 10;
     [SerializeField] private bool allowInsecureHttpInEditor = false;
     [SerializeField] private bool allowInvalidHttpsCertificateInEditor = true;
@@ -61,6 +61,8 @@ public class ProfileApiClient : MonoBehaviour
         string json = JsonUtility.ToJson(body);
         byte[] raw  = Encoding.UTF8.GetBytes(json);
 
+        Debug.Log($"[ProfileApiClient] POST {validatedUri}");
+Debug.Log($"[ProfileApiClient] Body: {json}");
         using var www = new UnityWebRequest(validatedUri, "POST");
         www.uploadHandler   = new UploadHandlerRaw(raw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -88,7 +90,10 @@ public class ProfileApiClient : MonoBehaviour
         }
 
         yield return op;
-
+        Debug.Log($"[ProfileApiClient] Result: {www.result}");
+Debug.Log($"[ProfileApiClient] Status: {www.responseCode}");
+Debug.Log($"[ProfileApiClient] Response: {www.downloadHandler?.text}");
+Debug.Log($"[ProfileApiClient] Error: {www.error}");
         bool ok = www.result == UnityWebRequest.Result.Success
                && www.responseCode >= 200 && www.responseCode < 300;
 

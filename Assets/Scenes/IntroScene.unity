@@ -184,6 +184,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1098702816579660293, guid: f7e8bb9d9e37ecd46997dbcb651cfbc5, type: 3}
+      propertyPath: apiUrl
+      value: https://pandora-api.babakraeisi.com/api/analytics/level-completed
+      objectReference: {fileID: 0}
+    - target: {fileID: 1098702816579660293, guid: f7e8bb9d9e37ecd46997dbcb651cfbc5, type: 3}
+      propertyPath: offlineMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7255144832884627124, guid: f7e8bb9d9e37ecd46997dbcb651cfbc5, type: 3}
+      propertyPath: Data.bridgePlayedToday
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7786242132756760341, guid: f7e8bb9d9e37ecd46997dbcb651cfbc5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 663.3454

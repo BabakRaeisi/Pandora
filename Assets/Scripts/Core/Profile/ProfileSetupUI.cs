@@ -108,31 +108,51 @@ public class ProfileSetupUI : MonoBehaviour
         StartCoroutine(SubmitProfileCoroutine());
     }
 
-    private IEnumerator SubmitProfileCoroutine()
+ private IEnumerator SubmitProfileCoroutine()
+{
+    int.TryParse(ageInput.text, out int parsedAge);
+
+    var profile = new PlayerProfile
     {
-        int.TryParse(ageInput.text, out int parsedAge);
+        phoneNumber = phoneInput.text.Trim(),
+        playerName = nameInput.text.Trim(),
+        age = parsedAge,
+        avatarIndex = avatarCarousel.CurrentIndex,
+        gender = GetGender()
+    };
 
-        var profile = new PlayerProfile
-        {
-            phoneNumber = phoneInput.text.Trim(),
-            playerName  = nameInput.text.Trim(),
-            age         = parsedAge,
-            avatarIndex = avatarCarousel.CurrentIndex,
-            gender      = GetGender()
-        };
+    SetUIBusy(true);
 
-        SetUIBusy(true);
-        PlayerDataManager.Instance.SetProfile(profile);
+    if (ProfileApiClient.Instance == null)
+    {
         SetUIBusy(false);
-
-        PopulateProfileLabels(); // update labels after save
-
-        if (errorText != null) errorText.gameObject.SetActive(false);
-        mainMenuUI.BackToMainFromSetup();
-
+        ShowError("Profile service is unavailable.");
         yield break;
     }
 
+    var task =
+        ProfileApiClient.Instance.RegisterOrRestoreAsync(profile);
+
+    while (!task.IsCompleted)
+        yield return null;
+
+    SetUIBusy(false);
+
+    if (task.Result == null)
+    {
+        ShowError("Could not connect to server. Please try again.");
+        yield break;
+    }
+
+    PlayerDataManager.Instance.ApplyServerResponse(task.Result);
+
+    PopulateProfileLabels();
+
+    if (errorText != null)
+        errorText.gameObject.SetActive(false);
+
+    mainMenuUI.BackToMainFromSetup();
+}
     public void Cancel()
     {
         mainMenuUI.BackToMainFromSetup();
