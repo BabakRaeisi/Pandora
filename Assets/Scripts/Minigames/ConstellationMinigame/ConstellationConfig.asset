@@ -160,7 +160,7 @@ MonoBehaviour:
       message: 
     - title: 
       message: 
-  - levelNumber: 7
+  - levelNumber: 8
     trials: 6
     isGatewayLevel: 1
     spanMin: 4
@@ -181,7 +181,7 @@ MonoBehaviour:
       message: 
     - title: 
       message: 
-  - levelNumber: 8
+  - levelNumber: 9
     trials: 7
     isGatewayLevel: 1
     spanMin: 5
@@ -202,7 +202,7 @@ MonoBehaviour:
       message: 
     - title: 
       message: 
-  - levelNumber: 9
+  - levelNumber: 10
     trials: 7
     isGatewayLevel: 0
     spanMin: 6
