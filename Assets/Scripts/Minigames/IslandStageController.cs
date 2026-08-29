@@ -7,6 +7,13 @@ public class IslandStageController : MonoBehaviour
     [Tooltip("Order: Constellation map, Bridge map, Treasure map.")]
     [SerializeField] private Button[] minigameMapButtons;
 
+    [Header("Map Button Icons")]
+    [Tooltip("Same order as minigameMapButtons. Shown when the level is locked.")]
+    [SerializeField] private GameObject[] lockIcons;
+
+    [Tooltip("Same order as minigameMapButtons. Shown when the level is unlocked/playable.")]
+    [SerializeField] private GameObject[] playIcons;
+
     [Header("Island Backgrounds")]
     [Tooltip("0 = no gems, 1 = Constellation gateway passed, 2 = Bridge gateway passed, 3 = SWM gateway passed.")]
     [SerializeField] private GameObject[] islandBackgrounds;
@@ -59,6 +66,22 @@ public class IslandStageController : MonoBehaviour
         }
 
         minigameMapButtons[index].interactable = isInteractable;
+
+        SetIconActive(lockIcons, index, !isInteractable);
+        SetIconActive(playIcons, index, isInteractable);
+    }
+
+    private static void SetIconActive(GameObject[] icons, int index, bool isActive)
+    {
+        if (icons == null ||
+            index < 0 ||
+            index >= icons.Length ||
+            icons[index] == null)
+        {
+            return;
+        }
+
+        icons[index].SetActive(isActive);
     }
 
     private static int CountEarnedGems(
